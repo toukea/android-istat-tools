@@ -6,6 +6,7 @@ import android.os.Handler;
 public final class ActivityFocusWatcher extends Thread {
 	OnFocusChangeListener mCallBack;
 	Activity mActivity;
+	long watchInterval=-1;
 	private boolean run = false;
 	private Handler mHandler;
 
@@ -24,7 +25,11 @@ public final class ActivityFocusWatcher extends Thread {
 		mCallBack = callBack;
 	}
 
-	public boolean startWatching(OnFocusChangeListener callBack) {
+    public void setWatchInterval(long watchInterval) {
+        this.watchInterval = watchInterval;
+    }
+
+    public boolean startWatching(OnFocusChangeListener callBack) {
 		boolean out = isWatching();
 		if (!out) {
 			mCallBack = callBack;
@@ -35,20 +40,27 @@ public final class ActivityFocusWatcher extends Thread {
 
 	@Override
 	public void run() {
-		
+
 		while (run) {
+            if(watchInterval>0){
+                try {
+                    sleep(watchInterval);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
 			checkActivityFocusState();
 		}
 	}
 
 	private void checkActivityFocusState() {
-		
+
 		final boolean newState = mActivity.hasWindowFocus();
 		if (newState != lastState && mCallBack != null && run) {
 			mHandler.post(new Runnable() {
 				@Override
 				public void run() {
-					
+
 					if (mCallBack != null)
 						mCallBack.onFocusChanged(newState);
 				}
@@ -59,7 +71,7 @@ public final class ActivityFocusWatcher extends Thread {
 
 	@Override
 	public synchronized void start() {
-		
+
 		run = true;
 		super.start();
 	}
