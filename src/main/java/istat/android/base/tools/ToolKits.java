@@ -231,7 +231,7 @@ public final class ToolKits {
         }
 
         /**
-         * SweetNumber is used in order to get sweet Number definit like: if a<9
+         * SweetNumber is used in order to get sweet Number definit like: if a less than 9
          * return "0a" else return just the number a
          *
          * @param a
