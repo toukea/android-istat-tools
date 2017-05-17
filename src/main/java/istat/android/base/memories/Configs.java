@@ -19,119 +19,125 @@ import android.content.SharedPreferences.Editor;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
- * 
  * @author Toukea Tatsi (Istat)
- * 
  */
 public class Configs {
-	Context context;
-	String file = "DEFAULT";
-	int mode = 0;
+    Context context;
+    String file = "DEFAULT";
+    int mode = 0;
 
-	public Configs(Context context) {
-		this.context = context;
-	}
+    public Configs(Context context) {
+        this.context = context;
+    }
 
-	public Configs getFile(String file) {
-		this.file = file;
-		return this;
-	}
+    public boolean clear(String key) {
+        if (!this.contain(key)) {
+            return false;
+        } else {
+            Editor editor = this.getEditor();
+            editor.remove(key);
+            editor.commit();
+            return true;
+        }
+    }
 
-	public void save(String key, Object value) {
-		if (value != null)
-			SavePreferences(context, file, key, value.toString(), mode);
-	}
+    public boolean clear() {
+        Editor editor = this.getEditor();
+        editor.clear();
+        editor.commit();
+        return true;
+    }
 
-	public String load(String key) {
-		return LoadPreferences(context, file, key, null, mode);
-	}
+    public Configs getFile(String file) {
+        this.file = file;
+        return this;
+    }
 
-	public String load(String key, String deflt) {
-		return LoadPreferences(context, file, key, deflt, mode);
-	}
+    public void save(String key, String value) {
+        SavePreferences(this.context, this.file, key, value, this.mode);
+    }
 
-	public int loadInt(String key, int deflt) {
-		try {
-			return Integer.valueOf(LoadPreferences(context, file, key, ""
-					+ deflt, mode));
-		} catch (Exception e) {
-			return deflt;
-		}
+    public String load(String key) {
+        return LoadPreferences(this.context, this.file, key, (String) null, this.mode);
+    }
 
-	}
+    public String load(String key, String deflt) {
+        return LoadPreferences(this.context, this.file, key, deflt, this.mode);
+    }
 
-	public float loadFloat(String key, float deflt) {
-		try {
-			return Integer.valueOf(LoadPreferences(context, file, key, ""
-					+ deflt, mode));
-		} catch (Exception e) {
-			return deflt;
-		}
+    public int loadInt(String key, int deflt) {
+        try {
+            return Integer.valueOf(LoadPreferences(this.context, this.file, key, "" + deflt, this.mode)).intValue();
+        } catch (Exception var4) {
+            return deflt;
+        }
+    }
 
-	}
+    public long loadLong(String key, long deflt) {
+        try {
+            return Long.valueOf(LoadPreferences(this.context, this.file, key, "" + deflt, this.mode)).longValue();
+        } catch (Exception var5) {
+            return deflt;
+        }
+    }
 
-	public double loadDouble(String key, double deflt) {
-		try {
-			return Integer.valueOf(LoadPreferences(context, file, key, ""
-					+ deflt, mode));
-		} catch (Exception e) {
-			return deflt;
-		}
+    public float loadFloat(String key, float deflt) {
+        try {
+            return (float) Integer.valueOf(LoadPreferences(this.context, this.file, key, "" + deflt, this.mode)).intValue();
+        } catch (Exception var4) {
+            return deflt;
+        }
+    }
 
-	}
+    public double loadDouble(String key, double deflt) {
+        try {
+            return (double) Integer.valueOf(LoadPreferences(this.context, this.file, key, "" + deflt, this.mode)).intValue();
+        } catch (Exception var5) {
+            return deflt;
+        }
+    }
 
-	public boolean lodBoolean(String key) {
-		return loadBoolean(key, false);
-	}
+    public boolean loadBoolean(String key, boolean deflt) {
+        try {
+            return Boolean.valueOf(LoadPreferences(this.context, this.file, key, "" + deflt, this.mode)).booleanValue();
+        } catch (Exception var4) {
+            return deflt;
+        }
+    }
 
-	public boolean loadBoolean(String key, boolean deflt) {
-		try {
-			return Boolean.valueOf(LoadPreferences(context, file, key, ""
-					+ deflt, mode));
-		} catch (Exception e) {
-			return deflt;
-		}
+    public boolean contain(String key) {
+        return contain(this.context, this.file, key);
+    }
 
-	}
+    public Configs setMode(int mode) {
+        this.mode = mode;
+        return this;
+    }
 
-	public boolean contain(String key) {
-		return contain(context, file, key);
-	}
+    public int getMode() {
+        return this.mode;
+    }
 
-	public Configs setMode(int mode) {
-		this.mode = mode;
-		return this;
-	}
+    public Editor getEditor() {
+        SharedPreferences sharedPreferences = this.context.getSharedPreferences(this.file, this.mode);
+        return sharedPreferences.edit();
+    }
 
-	public int getMode() {
-		return mode;
-	}
+    public static void SavePreferences(Context context, String File, String key, String value, int mode) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(File, mode);
+        Editor editor = sharedPreferences.edit();
+        editor.putString(key, value);
+        editor.commit();
+    }
 
-	public Editor getEditor() {
-		SharedPreferences sharedPreferences = context.getSharedPreferences(
-				file, mode);
-		return sharedPreferences.edit();
-	}
+    public static String LoadPreferences(Context context, String File, String key, String deflt, int mode) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(File, mode);
+        return sharedPreferences.getString(key, deflt);
+    }
 
-	public static void SavePreferences(Context context, String File,
-			String key, String value, int mode) {
-		SharedPreferences sharedPreferences = context.getSharedPreferences(
-				File, mode);
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putString(key, value);
-		editor.commit();
-
-	}
-
-	public static String LoadPreferences(Context context, String File,
-			String key, String deflt, int mode) {
-		SharedPreferences sharedPreferences = context.getSharedPreferences(
-				File, mode);
-		return sharedPreferences.getString(key, deflt);
-	}
-
-	public static boolean contain(Context context, String File, String key) {
-		return context.getSharedPreferences(File, 0).contains(key);
-	}
+    public static boolean contain(Context context, String File, String key) {
+        return context.getSharedPreferences(File, 0).contains(key);
+    }
 }
