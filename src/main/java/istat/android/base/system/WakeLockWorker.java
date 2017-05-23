@@ -24,7 +24,7 @@ public abstract class WakeLockWorker extends Worker {
         super.onDestroy();
     }
 
-    public PowerManager.WakeLock getPowerWakeLock() {
+    protected PowerManager.WakeLock getPowerWakeLock() {
         return powerWakeLock;
     }
 }
