@@ -1,6 +1,5 @@
 package istat.android.base.tools;
 
-import com.google.gson.Gson;
 
 import org.junit.Test;
 
@@ -62,8 +61,7 @@ public class ExampleUnitTest {
         }
 
         public String toJson() {
-            Gson gson = new Gson();
-            return gson.toJson(this);
+            return null;
         }
     }
 }

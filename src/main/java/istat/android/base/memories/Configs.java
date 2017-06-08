@@ -22,7 +22,9 @@ import android.content.SharedPreferences.Editor;
 
 /**
  * @author Toukea Tatsi (Istat)
+ * Deprecated use {@see Preferences} instead.
  */
+@Deprecated
 public class Configs {
     Context context;
     String file = "DEFAULT";
