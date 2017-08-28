@@ -286,7 +286,7 @@ public final class ToolKits {
     }
 
     public static final class FileKits {
-        public FileKits() {
+        private FileKits() {
         }
 
         public static final void writeString(String content, String filePath) throws IOException {

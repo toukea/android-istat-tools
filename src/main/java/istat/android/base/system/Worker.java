@@ -16,9 +16,6 @@ public abstract class Worker extends Service {
         }
     };
 
-    public Worker() {
-    }
-
     protected void updateTimeOut(int time) {
         this.removeTimeOut();
         if (time > 0) {
@@ -32,8 +29,8 @@ public abstract class Worker extends Service {
         if (this.onTimeOut(timeOut2)) {
             try {
                 this.stopSelf();
-            } catch (Exception var3) {
-                ;
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
@@ -49,8 +46,8 @@ public abstract class Worker extends Service {
     protected void removeTimeOut() {
         try {
             this.workerHandler.removeCallbacks(this.workerRunnable);
-        } catch (Exception var2) {
-            ;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
     }
