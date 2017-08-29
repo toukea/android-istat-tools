@@ -290,6 +290,37 @@ public final class ToolKits {
         public FileKits() {
         }
 
+        @SuppressLint("NewApi")
+        public static List<File> searchOnProviderFileWithExtention(
+                Context context, String... extend) {
+            List<File> out = new ArrayList();
+            if (extend == null || extend.length == 0)
+                return out;
+            ContentResolver cr = context.getContentResolver();
+            Uri uri = MediaStore.Files.getContentUri("external");
+            String[] projection = new String[]{MediaStore.Files.FileColumns.DATA};
+            String selection = MediaStore.Files.FileColumns.DATA + " LIKE ?";
+            if (extend.length > 1)
+                for (int i = 1; i < extend.length; i++) {
+                    selection += "OR " + MediaStore.Files.FileColumns.DATA
+                            + " LIKE ?";
+
+                }
+            for (int i = 0; i < extend.length; i++) {
+                extend[i] = "%" + extend[i];
+            }
+            String[] selectionArgs = extend;
+            String sortOrder = null;
+            Cursor allNonMediaFiles = cr.query(uri, projection, selection,
+                    selectionArgs, sortOrder);
+            if (allNonMediaFiles != null && allNonMediaFiles.getCount() > 0)
+                while (allNonMediaFiles.moveToNext()) {
+                    out.add(new File(allNonMediaFiles.getString(0)));
+                }
+            allNonMediaFiles.close();
+            return out;
+        }
+
         public static final void writeString(String content, String filePath) throws IOException {
             if (!(new File(filePath)).getParentFile().exists()) {
                 (new File(filePath)).getParentFile().mkdirs();
