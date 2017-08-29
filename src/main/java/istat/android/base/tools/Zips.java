@@ -22,14 +22,14 @@ import java.util.zip.ZipOutputStream;
 public class Zips {
 
 	public static void unZip(String inputFile, String outputFile) {
-		UnZiper.unZip(new File(inputFile), new File(outputFile));
+		UnZipper.unZip(new File(inputFile), new File(outputFile));
 	}
 
 	public static void zip(String inputFile, String outputFile) {
-		Ziper.zip(new File(inputFile), new File(outputFile));
+		Zipper.zip(new File(inputFile), new File(outputFile));
 	}
 
-	public static class UnZiper {
+	public static class UnZipper {
 
 		public static void unZip(File inputFile, File outputFile) {
 			try {
@@ -75,7 +75,7 @@ public class Zips {
 		}
 	}
 
-	public static class Ziper {
+	public static class Zipper {
 
 		private static void getAllFiles(File dir, List<File> fileList) {
 			try {
