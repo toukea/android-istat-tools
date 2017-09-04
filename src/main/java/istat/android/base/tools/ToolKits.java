@@ -40,6 +40,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Point;
@@ -286,7 +287,38 @@ public final class ToolKits {
     }
 
     public static final class FileKits {
-        private FileKits() {
+        public FileKits() {
+        }
+
+        @SuppressLint("NewApi")
+        public static List<File> searchOnProviderFileWithExtention(
+                Context context, String... extend) {
+            List<File> out = new ArrayList();
+            if (extend == null || extend.length == 0)
+                return out;
+            ContentResolver cr = context.getContentResolver();
+            Uri uri = MediaStore.Files.getContentUri("external");
+            String[] projection = new String[]{MediaStore.Files.FileColumns.DATA};
+            String selection = MediaStore.Files.FileColumns.DATA + " LIKE ?";
+            if (extend.length > 1)
+                for (int i = 1; i < extend.length; i++) {
+                    selection += "OR " + MediaStore.Files.FileColumns.DATA
+                            + " LIKE ?";
+
+                }
+            for (int i = 0; i < extend.length; i++) {
+                extend[i] = "%" + extend[i];
+            }
+            String[] selectionArgs = extend;
+            String sortOrder = null;
+            Cursor allNonMediaFiles = cr.query(uri, projection, selection,
+                    selectionArgs, sortOrder);
+            if (allNonMediaFiles != null && allNonMediaFiles.getCount() > 0)
+                while (allNonMediaFiles.moveToNext()) {
+                    out.add(new File(allNonMediaFiles.getString(0)));
+                }
+            allNonMediaFiles.close();
+            return out;
         }
 
         public static final void writeString(String content, String filePath) throws IOException {
@@ -503,12 +535,12 @@ public final class ToolKits {
         }
 
         public static final void closeKeyboard(Activity activity) {
-            InputMethodManager imm = (InputMethodManager) activity.getSystemService("input_method");
+            InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(activity.getCurrentFocus() != null ? activity.getCurrentFocus().getWindowToken() : null, 0);
         }
 
         public static final void closeKeyboard(View v) {
-            InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService("input_method");
+            InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
         }
 
@@ -517,7 +549,7 @@ public final class ToolKits {
         }
 
         public static final boolean isLocationGpsEnable(Context context) {
-            LocationManager manager = (LocationManager) context.getSystemService("location");
+            LocationManager manager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
             return manager.isProviderEnabled("gps");
         }
 
@@ -526,20 +558,20 @@ public final class ToolKits {
         }
 
         public static final boolean isLocationNetworkEnable(Context context) {
-            LocationManager manager = (LocationManager) context.getSystemService("location");
+            LocationManager manager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
             return manager.isProviderEnabled("network");
         }
 
         public static final void vibrate(Context context, int duration) {
             if (ToolKits.Software.hasPermission(context, "android.permission.VIBRATE")) {
-                ((Vibrator) context.getSystemService("vibrator")).vibrate((long) duration);
+                ((Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE)).vibrate((long) duration);
             }
 
         }
 
         public static final void vibrate(Context context, long[] pattern, int repeate) {
             if (ToolKits.Software.hasPermission(context, "android.permission.VIBRATE")) {
-                ((Vibrator) context.getSystemService("vibrator")).vibrate(pattern, repeate);
+                ((Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE)).vibrate(pattern, repeate);
             }
 
         }
@@ -663,7 +695,7 @@ public final class ToolKits {
         }
 
         public static final boolean isNetworkConnected(Context context) {
-            ConnectivityManager conMgr = (ConnectivityManager) context.getSystemService("connectivity");
+            ConnectivityManager conMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo activeNetwork = conMgr.getActiveNetworkInfo();
             return activeNetwork != null && activeNetwork.isConnected();
         }
@@ -678,19 +710,19 @@ public final class ToolKits {
         }
 
         public static final void setPortrait(Activity activity) {
-            activity.setRequestedOrientation(1);
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         }
 
         public static final void setLandScape(Activity activity) {
-            activity.setRequestedOrientation(0);
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
 
         public static final void setNoSensor(Activity activity) {
-            activity.setRequestedOrientation(5);
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
         }
 
         public static final void setFullSensor(Activity activity) {
-            activity.setRequestedOrientation(4);
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
         }
 
         public static final Point getScreenDimension(Activity context) {
@@ -711,7 +743,7 @@ public final class ToolKits {
         }
 
         public static final Boolean isActivityRunning(Context context, Class<?> activityClass) {
-            ActivityManager activityManager = (ActivityManager) context.getSystemService("activity");
+            ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             List tasks = activityManager.getRunningTasks(2147483647);
             Iterator var5 = tasks.iterator();
 
@@ -726,12 +758,12 @@ public final class ToolKits {
         }
 
         public static final Boolean isActivityTop(Context context, Class<?> activityClass) {
-            ActivityManager activityManager = (ActivityManager) context.getSystemService("activity");
+            ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             return ((ActivityManager.RunningTaskInfo) activityManager.getRunningTasks(1).get(0)).topActivity.getClassName().equals(activityClass.getCanonicalName()) ? Boolean.valueOf(true) : Boolean.valueOf(false);
         }
 
         public static final Boolean isProcessRunning(Context context, String processName) {
-            ActivityManager manager = (ActivityManager) context.getSystemService("activity");
+            ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             Iterator var4 = manager.getRunningAppProcesses().iterator();
 
             while (var4.hasNext()) {
@@ -750,7 +782,7 @@ public final class ToolKits {
         }
 
         public static final boolean isServiceRunning(Context context, Class<?> serviceClass) {
-            ActivityManager manager = (ActivityManager) context.getSystemService("activity");
+            ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             Iterator var4 = manager.getRunningServices(2147483647).iterator();
 
             while (var4.hasNext()) {
