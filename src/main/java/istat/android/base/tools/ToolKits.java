@@ -445,7 +445,8 @@ public final class ToolKits {
             }
         }
 
-        public static final void deleteDirectory(File directory) {
+        public static final int deleteDirectory(File directory) {
+            int deleted = 0;
             File[] files = directory.listFiles();
             if (files != null) {
                 File[] var5 = files;
@@ -456,12 +457,13 @@ public final class ToolKits {
                     if (f.isDirectory()) {
                         deleteDirectory(f);
                     }
-
+                    deleted++;
                     f.delete();
                 }
-
+                deleted++;
                 directory.delete();
             }
+            return deleted;
         }
 
         public static final String fileSize(String url) {
