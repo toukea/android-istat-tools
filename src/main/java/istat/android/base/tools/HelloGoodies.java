@@ -80,7 +80,7 @@ public class HelloGoodies {
 		}
 	}
 
-	public static interface GoodiesCallBack {
-		public abstract void onGoodiesShow(View v);
+	public  interface GoodiesCallBack {
+		void onGoodiesShow(View v);
 	}
 }
