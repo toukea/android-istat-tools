@@ -44,6 +44,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
@@ -705,6 +706,13 @@ public final class ToolKits {
 
     public static final class Screen {
         public Screen() {
+        }
+
+        public final static boolean isScreenVisible(View v) {
+            Rect rect = new Rect();
+            View root = v.getRootView();
+            root.getHitRect(rect);
+            return v.getLocalVisibleRect(rect);
         }
 
         public static final void setFullScreen(Activity activity) {
