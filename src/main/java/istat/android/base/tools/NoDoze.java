@@ -9,7 +9,8 @@ import android.app.Service;
 public class NoDoze {
 
     public <T extends Service> NoDoze(T service) {
-
+        byte[] b = {-128};
+        byte[] b2 = {127};
     }
 
     public void begin() {
