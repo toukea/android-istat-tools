@@ -96,8 +96,9 @@ public class Zips {
             if (directoryOutput.isDirectory()) {
                 fos = new FileOutputStream(directoryOutput
                         + "/" + directoryToZip.getName() + ".zip");
-            } else
+            } else {
                 fos = new FileOutputStream(directoryOutput);
+            }
 
             ZipOutputStream zos = new ZipOutputStream(fos);
 

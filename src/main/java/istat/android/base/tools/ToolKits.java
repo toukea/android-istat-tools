@@ -13,10 +13,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
 import java.lang.reflect.Method;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -28,7 +26,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -57,7 +54,6 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Display;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 
@@ -483,7 +479,7 @@ public final class ToolKits {
                 BufferedInputStream e = new BufferedInputStream(new FileInputStream(url));
                 float sise = (float) e.available();
                 e.close();
-                return (double) sise >= Math.pow(1000.0D, 3.0D) ? ToolKits.Word.ShortWord(ToolKits.Word.adjustNumber(sise / 1.07374182E9F), maxChar) + " Go" : (sise >= 100000.0F ? ToolKits.Word.ShortWord(ToolKits.Word.adjustNumber(sise / 1048576.0F), maxChar) + " Mo" : (sise >= 1000.0F ? ToolKits.Word.ShortWord(ToolKits.Word.adjustNumber(sise / 1024.0F), maxChar) + " Ko" : ToolKits.Word.ShortWord(ToolKits.Word.adjustNumber(sise), maxChar) + " oc"));
+                return (double) sise >= Math.pow(1000.0D, 3.0D) ? ToolKits.Word.shortWord(ToolKits.Word.adjustNumber(sise / 1.07374182E9F), maxChar) + " Go" : (sise >= 100000.0F ? ToolKits.Word.shortWord(ToolKits.Word.adjustNumber(sise / 1048576.0F), maxChar) + " Mo" : (sise >= 1000.0F ? ToolKits.Word.shortWord(ToolKits.Word.adjustNumber(sise / 1024.0F), maxChar) + " Ko" : ToolKits.Word.shortWord(ToolKits.Word.adjustNumber(sise), maxChar) + " oc"));
             } catch (Exception var4) {
                 Log.e("tkit.filesise.error", "Error:" + var4);
                 return "--*--";
@@ -815,7 +811,7 @@ public final class ToolKits {
     }
 
     public static final class Stream {
-        public Stream() {
+        private Stream() {
         }
 
         public static final String streamToString(InputStream inp, String encoding) {
@@ -1095,7 +1091,7 @@ public final class ToolKits {
             return !locale.equals(Locale.FRANCE) && !locale.equals(Locale.FRENCH) ? EnglishWordToNumber.replaceNumbers(word) : EnglishWordToNumber.replaceNumbers(word);
         }
 
-        public static final String ShortWord(String word, int max) {
+        public static final String shortWord(String word, int max) {
             return word.length() <= max ? word : word.substring(0, max) + "...";
         }
 
