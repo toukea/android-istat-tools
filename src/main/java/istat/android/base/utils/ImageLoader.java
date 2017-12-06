@@ -30,6 +30,8 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 import android.widget.ImageView;
 
+import org.json.JSONException;
+
 /*
  * Copyright (C) 2014 Istat Dev.
  *
@@ -46,9 +48,9 @@ import android.widget.ImageView;
  * limitations under the License.
  */
 /**
- * 
+ *
  * @author Toukea Tatsi (Istat)
- * 
+ *
  */
 public class ImageLoader {
 
@@ -310,9 +312,9 @@ public class ImageLoader {
 	};
 
 	public interface ResourceConnectionHandler {
-		InputStream onConnect(String url);
+		InputStream onConnect(String url) throws IOException;
 
-		void onDisconnect(String url, InputStream inputStream);
+		void onDisconnect(String url, InputStream inputStream) throws IOException;
 	}
 
 	private Bitmap getBitmap(String url) {
