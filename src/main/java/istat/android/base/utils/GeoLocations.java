@@ -39,7 +39,7 @@ public class GeoLocations implements LocationListener {
     }
 
     public void cancel() {
-        // TODO Auto-generated method stub
+
         manager.removeUpdates(this);
     }
 
@@ -49,7 +49,7 @@ public class GeoLocations implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
-        // TODO Auto-generated method stub
+
         locations.add(location);
         if (lastBestAccuracy > location.getAccuracy()) {
             badLocationCount = 0;
@@ -67,19 +67,19 @@ public class GeoLocations implements LocationListener {
 
     @Override
     public void onProviderDisabled(String provider) {
-        // TODO Auto-generated method stub
+
 
     }
 
     @Override
     public void onProviderEnabled(String provider) {
-        // TODO Auto-generated method stub
+
 
     }
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-        // TODO Auto-generated method stub
+
         if (status == 1)
             cancel();
     }
@@ -128,7 +128,7 @@ public class GeoLocations implements LocationListener {
 
         @Override
         public void run() {
-            // TODO Auto-generated method stub
+
             timeOutReached = true;
             cancel();
 

@@ -527,7 +527,7 @@ public class SESSION {
 
             @Override
             protected void onStartSession(SharedPreferences sharedP) {
-                // TODO Auto-generated method stub
+
                 String[] keySet = sharedP.getString(KEYSET_NAME, "").split(",");
                 if (keySet.length > 0) {
                     for (String tmp : keySet) {
@@ -542,7 +542,7 @@ public class SESSION {
 
             @Override
             protected void onSaveSession(SharedPreferences sharedP) {
-                // TODO Auto-generated method stub
+
                 String firstS = getFirstStartTime(), lastS = getLastStartTime(), lastSv = getLastSaveTime();
                 Editor editor = sharedP.edit();
                 editor.clear();
@@ -574,7 +574,7 @@ public class SESSION {
 
             @Override
             protected void onFinishSession(SharedPreferences sharedP) {
-                // TODO Auto-generated method stub
+
                 SESSION_DATA.clear();
                 SESSION_TEMPORY_DATA.clear();
                 SESSION_SPACE.clear();

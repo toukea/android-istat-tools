@@ -38,7 +38,7 @@ public class ProcessLaunchWatcher extends Thread {
 
 	@Override
 	public synchronized void start() {
-		// TODO Auto-generated method stub
+
 		run = true;
 		super.start();
 	}

@@ -31,7 +31,7 @@ public class HelloGoodies {
 			// int lastTrigg=(int) (System.currentTimeMillis());
 			@Override
 			public void onClick(View v) {
-				// TODO Auto-generated method stub
+
 				clicCount++;
 				// if(System.currentTimeMillis()-lastTrigg>=2000) clicCount=0;
 				if (clicCount >= count) {

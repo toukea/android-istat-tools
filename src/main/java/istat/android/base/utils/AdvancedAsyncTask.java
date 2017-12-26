@@ -31,7 +31,7 @@ public abstract class AdvancedAsyncTask<params, progress, results> extends Async
 		
 		@Override
 		protected void onPreExecute() {
-			// TODO Auto-generated method stub
+
 			super.onPreExecute();
 			run=true;
 			startTimeStamp=new Date().getTime();
