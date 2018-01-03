@@ -837,9 +837,7 @@ public final class ToolKits {
 
         public static final String streamToString(InputStream inp) {
             String out = "";
-            byte[] b = new byte[8];
-            boolean read = false;
-
+            byte[] b = new byte[1024];
             try {
                 int read1;
                 while ((read1 = inp.read(b)) > -1) {
@@ -848,9 +846,7 @@ public final class ToolKits {
 
                 inp.close();
             } catch (Exception var5) {
-                ;
             }
-
             return out;
         }
 
