@@ -533,6 +533,11 @@ public final class ToolKits {
             }
         }
 
+        public final static void showKeyboard(Context context) {
+            InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_NOT_ALWAYS);
+        }
+
         public static final void closeKeyboard(Activity activity) {
             InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(activity.getCurrentFocus() != null ? activity.getCurrentFocus().getWindowToken() : null, 0);
@@ -744,7 +749,7 @@ public final class ToolKits {
         public static final void installApk(Context context, String apkfile) {
             Intent intent = new Intent("android.intent.action.VIEW");
             intent.setDataAndType(Uri.fromFile(new File(apkfile)), "application/vnd.android.package-archive");
-            intent.setFlags(268435456);
+            intent.setFlags(Integer.MAX_VALUE);
             context.startActivity(intent);
         }
 
