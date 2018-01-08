@@ -3,6 +3,10 @@ package istat.android.base.memories;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.google.gson.Gson;
+
+import istat.android.base.tools.TextUtils;
+
 /**
  * Created by istat on 27/05/17.
  */
@@ -34,13 +38,43 @@ public class Preferences {
         return true;
     }
 
-    public Preferences getFile(String file) {
-        this.file = file;
+    public Preferences getFile(String name) {
+        this.file = name;
         return this;
     }
 
     public void save(String key, String value) {
         SavePreferences(this.context, this.file, key, value, this.mode);
+    }
+
+    public void save(String key, int value) {
+        save(key, String.valueOf(value));
+    }
+
+    public void save(String key, float value) {
+        save(key, String.valueOf(value));
+    }
+
+    public void save(String key, double value) {
+        save(key, String.valueOf(value));
+    }
+
+    public void save(String key, long value) {
+        save(key, String.valueOf(value));
+    }
+
+    public void save(String key, Object value) {
+        Gson gson = new Gson();
+        SavePreferences(this.context, this.file, key, gson.toJson(value), this.mode);
+    }
+
+    public <T> T load(String key, Class<T> cLass) {
+        Gson gson = new Gson();
+        String jsonString = LoadPreferences(this.context, this.file, key, (String) null, this.mode);
+        if (TextUtils.isEmpty(jsonString)) {
+            return null;
+        }
+        return gson.fromJson(jsonString, cLass);
     }
 
     public String load(String key) {
