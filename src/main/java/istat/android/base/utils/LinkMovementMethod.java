@@ -108,8 +108,13 @@ public class LinkMovementMethod extends android.text.method.LinkMovementMethod {
         public boolean onSingleTapConfirmed(MotionEvent event) {
             // Notified when tap occurs.
             URLSpan span = getURLSpan(mWidget, mBuffer, event);
+            if (span == null) {
+                return false;
+            }
             final String linkText = getLinkText(span, mBuffer, event);
-
+            if (linkText == null) {
+                return false;
+            }
             LinkType linkType = LinkType.NONE;
 
             if (Patterns.PHONE.matcher(linkText).matches()) {

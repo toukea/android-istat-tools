@@ -749,13 +749,13 @@ public final class ToolKits {
         public static final void installApk(Context context, String apkfile) {
             Intent intent = new Intent("android.intent.action.VIEW");
             intent.setDataAndType(Uri.fromFile(new File(apkfile)), "application/vnd.android.package-archive");
-            intent.setFlags(Integer.MAX_VALUE);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
 
         public static final Boolean isActivityRunning(Context context, Class<?> activityClass) {
             ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-            List tasks = activityManager.getRunningTasks(2147483647);
+            List tasks = activityManager.getRunningTasks(Integer.MAX_VALUE);
             Iterator var5 = tasks.iterator();
 
             while (var5.hasNext()) {
@@ -869,37 +869,36 @@ public final class ToolKits {
             in.close();
         }
 
-        public static final OutputStream copyStream(File is, File os) throws FileNotFoundException {
-            return copyStream((InputStream) (new FileInputStream(is)), (OutputStream) (new FileOutputStream(os)));
+        public static OutputStream copyStream(File is, File os) throws FileNotFoundException {
+            return copyStream(is.getAbsolutePath(), os.getAbsolutePath());
         }
 
         public static final OutputStream copyStream(String inputPath, String outputPath) throws FileNotFoundException {
-            return copyStream((InputStream) (new FileInputStream(inputPath)), (OutputStream) (new FileOutputStream(outputPath)));
+            OutputStream outputStream = new FileOutputStream(outputPath);
+            copyStream(new FileInputStream(inputPath), new FileOutputStream(outputPath));
+            return outputStream;
         }
 
-        public static final OutputStream copyStream(InputStream is, OutputStream os) {
-            boolean buffer_size = true;
-
+        public static final long copyStream(InputStream is, OutputStream os) {
+            long out = 0;
             try {
                 byte[] bytes = new byte[1024];
-
+                int count;
                 while (true) {
-                    int count = is.read(bytes, 0, 1024);
+                    count = is.read(bytes, 0, 1024);
+                    out += count;
                     if (count == -1) {
                         break;
                     }
-
                     os.write(bytes, 0, count);
                 }
             } catch (Exception var5) {
-                ;
             }
-
-            return os;
+            return out;
         }
 
-        public static final void copyStream(InputStream is, OutputStream os, int startByte) {
-            boolean buffer_size = true;
+        public static final long copyStream(InputStream is, OutputStream os, int startByte) {
+            long out = 0;
 
             try {
                 byte[] bytes = new byte[1024];
@@ -907,6 +906,7 @@ public final class ToolKits {
 
                 while (true) {
                     int count = is.read(bytes, 0, 1024);
+                    out += count;
                     if (count == -1) {
                         break;
                     }
@@ -914,8 +914,8 @@ public final class ToolKits {
                     os.write(bytes, 0, count);
                 }
             } catch (Exception var6) {
-                ;
             }
+            return out;
 
         }
 

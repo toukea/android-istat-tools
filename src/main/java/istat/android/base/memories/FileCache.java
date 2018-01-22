@@ -69,6 +69,11 @@ public class FileCache {
         createCacheDir();
     }
 
+    public FileCache(Context context, File cacheDir) {
+        this.context = context;
+        this.cacheDir = cacheDir;
+    }
+
     private void createCacheDir() {
         if (!cacheDir.exists()) {
             // createDirectives cache dir in your application context
