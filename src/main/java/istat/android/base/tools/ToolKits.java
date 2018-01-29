@@ -39,6 +39,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -566,6 +567,7 @@ public final class ToolKits {
             return manager.isProviderEnabled("network");
         }
 
+        @SuppressLint("MissingPermission")
         public static final void vibrate(Context context, int duration) {
             if (ToolKits.Software.hasPermission(context, "android.permission.VIBRATE")) {
                 ((Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE)).vibrate((long) duration);
@@ -573,6 +575,7 @@ public final class ToolKits {
 
         }
 
+        @SuppressLint("MissingPermission")
         public static final void vibrate(Context context, long[] pattern, int repeate) {
             if (ToolKits.Software.hasPermission(context, "android.permission.VIBRATE")) {
                 ((Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE)).vibrate(pattern, repeate);
@@ -700,7 +703,7 @@ public final class ToolKits {
 
         public static final boolean isNetworkConnected(Context context) {
             ConnectivityManager conMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo activeNetwork = conMgr.getActiveNetworkInfo();
+            @SuppressLint("MissingPermission") NetworkInfo activeNetwork = conMgr.getActiveNetworkInfo();
             return activeNetwork != null && activeNetwork.isConnected();
         }
     }
@@ -812,6 +815,22 @@ public final class ToolKits {
             } catch (Exception var2) {
                 return false;
             }
+        }
+
+        public static File getApplicationInstallationFile(Context context, String packageName) throws FileNotFoundException {
+            if (packageName == null) {
+                throw new RuntimeException("Package name can't be null");
+            }
+            final Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+            mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+            List<ResolveInfo> apps = context.getPackageManager().queryIntentActivities(mainIntent, 0);
+            for (ResolveInfo info : apps) {
+                File file = new File(info.activityInfo.applicationInfo.publicSourceDir);
+                if (packageName.equalsIgnoreCase(info.activityInfo.packageName)) {
+                    return file;
+                }
+            }
+            throw new FileNotFoundException("Application not Found for package name:" + packageName);
         }
     }
 
@@ -1163,4 +1182,5 @@ public final class ToolKits {
             }
         }
     }
+
 }

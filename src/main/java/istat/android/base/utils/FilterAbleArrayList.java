@@ -14,18 +14,32 @@ import istat.android.base.interfaces.FilterAble;
 
 public class FilterAbleArrayList<T> extends ArrayList<T> implements FilterAble<T> {
     List<T> fullContent = new ArrayList();
+    Filter<T> filter;
 
     public FilterAbleArrayList() {
         super();
     }
 
     public FilterAbleArrayList(Collection<T> collection) {
+        this(collection, null);
+    }
+
+    public FilterAbleArrayList(Collection<T> collection, Filter<T> filter) {
         super(collection);
-        fullContent.addAll(collection);
+        this.fullContent.addAll(collection);
+        this.filter = filter;
+        if (filter != null) {
+            apply(filter);
+        }
+    }
+
+    public Filter<T> getFilter() {
+        return filter;
     }
 
     @Override
     public void apply(Filter<T> filter) {
+        this.filter = filter;
         super.clear();
         if (filter == null) {
             super.addAll(fullContent);
