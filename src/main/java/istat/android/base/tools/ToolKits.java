@@ -888,38 +888,37 @@ public final class ToolKits {
             in.close();
         }
 
-        public static OutputStream copyStream(File is, File os) throws FileNotFoundException {
+        public static OutputStream copyStream(File is, File os) throws IOException {
             return copyStream(is.getAbsolutePath(), os.getAbsolutePath());
         }
 
-        public static final OutputStream copyStream(String inputPath, String outputPath) throws FileNotFoundException {
+        public static final OutputStream copyStream(String inputPath, String outputPath) throws IOException {
+            InputStream inputStream = new FileInputStream(inputPath);
             OutputStream outputStream = new FileOutputStream(outputPath);
-            copyStream(new FileInputStream(inputPath), new FileOutputStream(outputPath));
+            copyStream(inputStream, outputStream);
+            inputStream.close();
+            outputStream.close();
             return outputStream;
         }
 
-        public static final long copyStream(InputStream is, OutputStream os) {
+        public static final long copyStream(InputStream is, OutputStream os) throws IOException {
             long out = 0;
-            try {
-                byte[] bytes = new byte[1024];
-                int count;
-                while (true) {
-                    count = is.read(bytes, 0, 1024);
-                    out += count;
-                    if (count == -1) {
-                        break;
-                    }
-                    os.write(bytes, 0, count);
+            byte[] bytes = new byte[1024];
+            int count;
+            while (true) {
+                count = is.read(bytes, 0, 1024);
+                out += count;
+                if (count == -1) {
+                    break;
                 }
-            } catch (Exception var5) {
+                os.write(bytes, 0, count);
             }
             return out;
         }
 
-        public static final long copyStream(InputStream is, OutputStream os, int startByte) {
+        public static final long copyStream(InputStream is, OutputStream os, int startByte) throws IOException {
             long out = 0;
 
-            try {
                 byte[] bytes = new byte[1024];
                 is.skip((long) startByte);
 
@@ -932,8 +931,6 @@ public final class ToolKits {
 
                     os.write(bytes, 0, count);
                 }
-            } catch (Exception var6) {
-            }
             return out;
 
         }

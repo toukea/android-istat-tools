@@ -83,8 +83,6 @@ public class ImageLoader {
 
     public ImageLoader(Context context, Bitmap errorIcon, Bitmap progressIcon) {
         this.context = context;
-        fileCache = new FileCache(this.context);
-
         // Creates a thread pool that reuses a fixed number of
         // threads operating off a shared unbounded queue.
         executorService = Executors.newFixedThreadPool(5);
@@ -93,11 +91,11 @@ public class ImageLoader {
 
     }
 
-    public void setFileCache(FileCache DriveCache) {
-        if (DriveCache == null) {
-            DriveCache = new FileCache(this.context);
+    public void setFileCache(FileCache fileCache) {
+        if (fileCache == null) {
+            fileCache = new FileCache(this.context);
         }
-        this.fileCache = DriveCache;
+        this.fileCache = fileCache;
     }
 
     public void setMemoryCache(MemoryCache memoryCache) {
@@ -152,6 +150,9 @@ public class ImageLoader {
 //	}
 
     public FileCache getFileCache() {
+        if (fileCache == null) {
+            fileCache = new FileCache(getContext());
+        }
         return fileCache;
     }
 
@@ -229,7 +230,7 @@ public class ImageLoader {
                 if (imageViewReused(photoToLoad))
                     return;
                 // download image create web url
-                Bitmap bmp = getBitmap(photoToLoad.url);
+                Bitmap bmp = getBitmap(photoToLoad.url, mResourceConnectionHandler);
 
                 // set image data in Memory Cache
                 memoryCache.put(photoToLoad.url, bmp);
@@ -258,15 +259,16 @@ public class ImageLoader {
         this.mResourceConnectionHandler = mResourceConnectionHandler;
     }
 
-    private ResourceConnectionHandler mResourceConnectionHandler = new ResourceConnectionHandler() {
+    public final static ResourceConnectionHandler DEFAULT_RESOURCE_CONNECTION_HANDLER = new ResourceConnectionHandler() {
         InputStream is = null;
-        URLConnection urlConnection;
+        private Map<String, URLConnection> connectionMap = Collections.synchronizedMap(new WeakHashMap<String, URLConnection>());
 
         @Override
         public InputStream onConnect(String url) {
             try {
                 URL imageUrl = new URL(url);
                 URLConnection urlConnection = imageUrl.openConnection();
+                connectionMap.put(url, urlConnection);
                 if (urlConnection instanceof HttpURLConnection) {
                     HttpURLConnection conn = (HttpURLConnection) imageUrl
                             .openConnection();
@@ -288,10 +290,16 @@ public class ImageLoader {
 
         @Override
         public void onDisconnect(String url, InputStream stream) {
-            if (urlConnection instanceof HttpURLConnection)
-                ((HttpURLConnection) urlConnection).disconnect();
+            URLConnection urlConnection = connectionMap.get(url);
+            if (urlConnection != null) {
+                if (urlConnection instanceof HttpURLConnection) {
+                    ((HttpURLConnection) urlConnection).disconnect();
+                }
+                connectionMap.remove(url);
+            }
         }
     };
+    private ResourceConnectionHandler mResourceConnectionHandler = DEFAULT_RESOURCE_CONNECTION_HANDLER;
 
     public interface ResourceConnectionHandler {
         InputStream onConnect(String url) throws IOException;
@@ -299,13 +307,13 @@ public class ImageLoader {
         void onDisconnect(String url, InputStream inputStream) throws IOException;
     }
 
-    private Bitmap getBitmap(String url) {
+    private Bitmap getBitmap(final String url, final ResourceConnectionHandler resourceConnectionHandler) {
 
         if (ToolKits.WordFormat.isInteger(url))
             return getBitmapFromResource(context,
                     Integer.valueOf(url));
 
-        File f = fileCache.getFile(url);
+        File f = getFileCache().getFile(url);
 
         // create SD cache
         // CHECK : if trying to decode file which not exist in cache return null
@@ -321,11 +329,11 @@ public class ImageLoader {
         // Download image file create web
         try {
             Bitmap bitmap;
-            InputStream is = mResourceConnectionHandler.onConnect(url);
+            InputStream is = resourceConnectionHandler.onConnect(url);
             OutputStream os = new FileOutputStream(f);
             ToolKits.Stream.copyStream(is, os);
             os.close();
-            mResourceConnectionHandler.onDisconnect(url, is);
+            resourceConnectionHandler.onDisconnect(url, is);
             if (imageQuality == QUALITY_LOW) {
                 bitmap = decodeFile(f);
             } else {
@@ -531,7 +539,9 @@ public class ImageLoader {
     public void clearCache() {
         // Clear cache directory downloaded images and stored data in maps
         memoryCache.clear();
-        fileCache.clear();
+        if (fileCache != null) {
+            fileCache.clear();
+        }
     }
 
     public void clearMemoryCache() {
@@ -539,7 +549,9 @@ public class ImageLoader {
     }
 
     public void clearFileCache() {
-        fileCache.clear();
+        if (fileCache != null) {
+            fileCache.clear();
+        }
     }
 
 
@@ -604,7 +616,7 @@ public class ImageLoader {
     }
 
     private void notifyImageLoad(PhotoToLoad photoToLoad, LoadCallback listener) {
-        if (progressionBitmapHolder != null && (listener == null || (listener != null && !listener.onLoad(photoToLoad)))) {
+        if (photoToLoad.imageView != null && progressionBitmapHolder != null && (listener == null || (listener != null && !listener.onLoad(photoToLoad)))) {
             photoToLoad.imageView.setImageBitmap(progressionBitmapHolder);
         }
     }
@@ -613,7 +625,7 @@ public class ImageLoader {
         if (listener != null) {
             listener.onLoadCompleted(photoToLoad, false);
         }
-        if (errorBitmapHolder != null && (listener == null || (listener != null && !listener.onLoadError(photoToLoad, th)))) {
+        if (photoToLoad.imageView != null && errorBitmapHolder != null && (listener == null || (listener != null && !listener.onLoadError(photoToLoad, th)))) {
             photoToLoad.imageView.setImageBitmap(errorBitmapHolder);
         }
     }
@@ -623,8 +635,8 @@ public class ImageLoader {
             listener.onLoadCompleted(photoToLoad, bitmap != null);
         }
         if (bitmap != null) {
-            if (listener == null || !listener.onLoad(photoToLoad)) {
-                if (photoToLoad != null) {
+            if (listener == null || !listener.onLoadSucceed(photoToLoad, bitmap)) {
+                if (photoToLoad != null && photoToLoad.imageView != null) {
                     photoToLoad.imageView.setImageBitmap(bitmap);
                 }
             }
