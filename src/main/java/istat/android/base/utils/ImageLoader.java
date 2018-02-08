@@ -631,9 +631,6 @@ public class ImageLoader {
     }
 
     private void notifyImageLoaded(PhotoToLoad photoToLoad, LoadCallback listener, Bitmap bitmap) {
-        if (listener != null) {
-            listener.onLoadCompleted(photoToLoad, bitmap != null);
-        }
         if (bitmap != null) {
             if (listener == null || !listener.onLoadSucceed(photoToLoad, bitmap)) {
                 if (photoToLoad != null && photoToLoad.imageView != null) {
@@ -642,6 +639,9 @@ public class ImageLoader {
             }
         } else {
             notifyImageLoadError(photoToLoad, listener, new IOException("Unable to load image friom:" + photoToLoad.url));
+        }
+        if (listener != null) {
+            listener.onLoadCompleted(photoToLoad, bitmap != null);
         }
     }
     /*
