@@ -287,6 +287,26 @@ public final class ToolKits {
     public static final class FileKits {
         public FileKits() {
         }
+        public static int countLines(String filename) throws IOException {
+            InputStream is = new BufferedInputStream(new FileInputStream(filename));
+            try {
+                byte[] c = new byte[1024];
+                int count = 0;
+                int readChars = 0;
+                boolean empty = true;
+                while ((readChars = is.read(c)) != -1) {
+                    empty = false;
+                    for (int i = 0; i < readChars; ++i) {
+                        if (c[i] == '\n') {
+                            ++count;
+                        }
+                    }
+                }
+                return (count == 0 && !empty) ? 1 : count;
+            } finally {
+                is.close();
+            }
+        }
 
         @SuppressLint("NewApi")
         public static List<File> searchOnProviderFileWithExtention(
@@ -1058,13 +1078,13 @@ public final class ToolKits {
             return cal;
         }
 
-        public static final String toSentense(String word, String endingPontuation) {
-            word = begginByUperCase(word);
+        public static final String toSentence(String word, String endingPontuation) {
+            word = beginByUpperCase(word);
             int index = word.indexOf(endingPontuation);
             return index <= 0 ? word + endingPontuation : word;
         }
 
-        public static final String begginByUperCase(String word) {
+        public static final String beginByUpperCase(String word) {
             if (word.length() > 1) {
                 String beggin = word.substring(0, 1).toUpperCase(Locale.getDefault());
                 word = beggin + word.substring(1);
@@ -1073,7 +1093,7 @@ public final class ToolKits {
             return word;
         }
 
-        public static final String begginByLowerCase(String word) {
+        public static final String beginByLowerCase(String word) {
             if (word.length() > 1) {
                 String beggin = word.substring(0, 1).toLowerCase(Locale.getDefault());
                 word = beggin + word.substring(1);

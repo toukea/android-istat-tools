@@ -32,40 +32,26 @@ public class FileCache {
     Context context;
 
     public FileCache(Context context) {
-        this.context = context;
-        // Find the dir at SDCARD to save cached images
-        dirName = context.getPackageName();
-        if (android.os.Environment.getExternalStorageState().equals(
-                android.os.Environment.MEDIA_MOUNTED)) {
-            // if SDCARD is mounted (SDCARD is present on device and mounted)
-            cacheDir = new File(
-                    android.os.Environment.getExternalStorageDirectory(),
-                    dirName);
-        } else {
-            // if checking on simulator the createDirectives cache dir in your application
-            cacheDir = context.getCacheDir();
-        }
-        createCacheDir();
-        Log.d("FileCache", "CacheDir::" + cacheDir.getAbsolutePath());
+        this(context, context.getPackageName());
     }
 
 
     public FileCache(Context context, String dirNames) {
         this.context = context;
         // Find the dir at SDCARD to save cached images
-        dirName = dirNames;
+        this.dirName = dirNames;
         if (android.os.Environment.getExternalStorageState().equals(
                 android.os.Environment.MEDIA_MOUNTED)) {
             // if SDCARD is mounted (SDCARD is present on device and mounted)
             cacheDir = new File(
                     android.os.Environment.getExternalStorageDirectory(),
-                    dirName);
+                    dirNames);
         } else {
             // if checking on simulator the createDirectives cache dir in your application
             // context
             cacheDir = new File(context.getCacheDir(), dirNames);
         }
-        Log.d("FileCache(C,S)", "CacheDir::" + cacheDir.getAbsolutePath());
+        Log.d("FileCache", "CacheDir::" + cacheDir.getAbsolutePath());
         createCacheDir();
     }
 

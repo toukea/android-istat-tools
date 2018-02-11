@@ -5,7 +5,12 @@ package istat.android.base.tools;
  */
 
 public class TextUtils {
-    public static boolean isEmpty(String s) {
+    public static boolean isEmpty(CharSequence s) {
         return s == null || s.length() == 0;
+    }
+
+    private static int countLines(String str) {
+        String[] lines = str.split("\r\n|\r|\n");
+        return lines.length;
     }
 }

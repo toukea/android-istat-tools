@@ -48,8 +48,8 @@ import android.widget.ImageView;
  * @author Toukea Tatsi (Istat)
  */
 public class ImageLoader {
-
-    public static int QUALITY_HIGH = 0, QUALITY_LOW = 1;
+    //TODO implementer un ImageRender|Manipulator qui manipule l'image avant l'affichage
+    public static int QUALITY_HIGH = 0, QUALITY_LOW = 85;
     final static int DEFAULT_PICTURE_ON_PROGRESS = android.R.drawable.ic_dialog_info,
             DEFAULT_PICTURE_ON_ERROR = android.R.drawable.ic_dialog_alert;
     Bitmap progressionBitmapHolder, errorBitmapHolder;
@@ -318,10 +318,11 @@ public class ImageLoader {
         // create SD cache
         // CHECK : if trying to decode file which not exist in cache return null
         Bitmap b;
-        if (imageQuality == QUALITY_LOW)
-            b = decodeFile(f);
-        else
+        if (imageQuality == QUALITY_HIGH) {
             b = getBitmapFromPath(f.getAbsolutePath());
+        } else {
+            b = decodeFile(f, imageQuality);
+        }
 
         if (b != null)
             return b;
@@ -353,7 +354,7 @@ public class ImageLoader {
 
     }
 
-    public static Bitmap getBitmap(String URL, Context context, int Quality) {
+    public static Bitmap getBitmap(String URL, Context context, int quality) {
         if (ToolKits.WordFormat.isInteger(URL))
             return getBitmapFromResource(context,
                     Integer.valueOf(URL));
@@ -364,11 +365,11 @@ public class ImageLoader {
         // CHECK : if trying to decode file which not exist in cache return null
         Bitmap b;
 
-        if (Quality == QUALITY_LOW)
-            b = decodeFile(f);
-        else
+        if (quality == QUALITY_HIGH) {
             b = getBitmapFromPath(f.getAbsolutePath());
-
+        } else {
+            b = decodeFile(f, quality);
+        }
         if (b != null)
             return b;
 
@@ -392,13 +393,14 @@ public class ImageLoader {
             OutputStream os = new FileOutputStream(f);
             ToolKits.Stream.copyStream(is, os);
             os.close();
-            if (urlConnection instanceof HttpURLConnection)
+            if (urlConnection instanceof HttpURLConnection) {
                 ((HttpURLConnection) urlConnection).disconnect();
-            if (Quality == QUALITY_LOW)
-                bitmap = decodeFile(f);
-            else
+            }
+            if (quality == QUALITY_HIGH) {
                 bitmap = getBitmapFromPath(f.getAbsolutePath());
-
+            } else {
+                bitmap = decodeFile(f, quality);
+            }
             return bitmap;
 
         } catch (Throwable ex) {
@@ -408,7 +410,7 @@ public class ImageLoader {
         }
     }
 
-    public static Bitmap getBitmap(String URL, FileCache DriveCache, int Quality) {
+    public static Bitmap getBitmap(String URL, FileCache DriveCache, int quality) {
         if (ToolKits.WordFormat.isInteger(URL))
             return getBitmapFromResource(DriveCache.getContext(),
                     Integer.valueOf(URL));
@@ -419,10 +421,11 @@ public class ImageLoader {
         // CHECK : if trying to decode file which not exist in cache return null
         Bitmap b;
 
-        if (Quality == QUALITY_LOW)
-            b = decodeFile(f);
-        else
+        if (quality == QUALITY_HIGH) {
             b = getBitmapFromPath(f.getAbsolutePath());
+        } else {
+            b = decodeFile(f, quality);
+        }
 
         if (b != null)
             return b;
@@ -449,10 +452,11 @@ public class ImageLoader {
             os.close();
             if (urlConnection instanceof HttpURLConnection)
                 ((HttpURLConnection) urlConnection).disconnect();
-            if (Quality == QUALITY_LOW)
-                bitmap = decodeFile(f);
-            else
+            if (quality == QUALITY_HIGH) {
                 bitmap = getBitmapFromPath(f.getAbsolutePath());
+            } else {
+                bitmap = decodeFile(f, quality);
+            }
 
             return bitmap;
 
@@ -463,8 +467,12 @@ public class ImageLoader {
         }
     }
 
+    private Bitmap decodeFile(File f) {
+        return decodeFile(f, imageQuality);
+    }
+
     // Decodes image and scales it to reduce memory consumption
-    public static Bitmap decodeFile(File f) {
+    public static Bitmap decodeFile(File f, int quality) {
 
         try {
 
@@ -478,7 +486,7 @@ public class ImageLoader {
             // Find the correct scale value. It should be the power of 2.
 
             // Set width/height of recreated image
-            final int REQUIRED_SIZE = 85;
+            final int REQUIRED_SIZE = quality;
 
             int width_tmp = o.outWidth, height_tmp = o.outHeight;
             int scale = 1;
@@ -596,10 +604,12 @@ public class ImageLoader {
         return context;
     }
 
+//    public interface DisplayHandler {
+//        boolean onHandle(PhotoToLoad photoToLoad);
+//    }
+
     public interface LoadCallback {
         boolean onLoad(PhotoToLoad phLoad);
-
-        void onLoadCompleted(PhotoToLoad phLoad, boolean success);
 
         /**
          * @param phLoad
@@ -612,6 +622,8 @@ public class ImageLoader {
 
 
         boolean onLoadError(PhotoToLoad phLoad, Throwable error);
+
+        void onLoadCompleted(PhotoToLoad phLoad, boolean success);
 
     }
 
@@ -644,36 +656,4 @@ public class ImageLoader {
             listener.onLoadCompleted(photoToLoad, bitmap != null);
         }
     }
-    /*
-        public LoadCallback getDefaultLoadListener() {
-		return new LoadCallback() {
-
-			@Override
-			public boolean onLoad(PhotoToLoad phLoad) {
-				if (progressionBitmapHolder != null) {
-					phLoad.imageView.setImageBitmap(progressionBitmapHolder);
-				}
-				return true;
-			}
-
-			@Override
-			public boolean onLoadFinish(PhotoToLoad phLoad, Bitmap bitmap) {
-				if (bitmap == null) {
-					if (errorBitmapHolder != null) {
-						bitmap = errorBitmapHolder;
-						if (phLoad != null) {
-							phLoad.imageView.setImageBitmap(bitmap);
-						}
-					}
-				} else {
-					if (phLoad != null) {
-						phLoad.imageView.setImageBitmap(bitmap);
-					}
-				}
-				return true;
-			}
-
-		};
-	}
-	 */
 }
