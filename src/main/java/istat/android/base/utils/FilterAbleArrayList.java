@@ -13,7 +13,7 @@ import istat.android.base.interfaces.FilterAble;
  */
 
 public class FilterAbleArrayList<T> extends ArrayList<T> implements FilterAble<T> {
-    List<T> fullContent = new ArrayList();
+    public final List<T> fullContent = new ArrayList();
     Filter<T> filter;
 
     public FilterAbleArrayList() {
@@ -31,6 +31,10 @@ public class FilterAbleArrayList<T> extends ArrayList<T> implements FilterAble<T
         if (filter != null) {
             apply(filter);
         }
+    }
+
+    public List<T> getFullContent() {
+        return new ArrayList<>(fullContent);
     }
 
     public Filter<T> getFilter() {

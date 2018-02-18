@@ -307,6 +307,7 @@ public class ImageLoader {
         void onDisconnect(String url, InputStream inputStream) throws IOException;
     }
 
+    //TODO cette methode essayer de voir comment délégué a une autre méthode getBitmap
     private Bitmap getBitmap(final String url, final ResourceConnectionHandler resourceConnectionHandler) {
 
         if (ToolKits.WordFormat.isInteger(url))
@@ -335,12 +336,10 @@ public class ImageLoader {
             ToolKits.Stream.copyStream(is, os);
             os.close();
             resourceConnectionHandler.onDisconnect(url, is);
-            if (imageQuality == QUALITY_LOW) {
-                bitmap = decodeFile(f);
+            if (imageQuality == QUALITY_HIGH) {
+                bitmap = getBitmapFromPath(f.getAbsolutePath());
             } else {
-                FileInputStream bitmapStream = new FileInputStream(f);
-                bitmap = BitmapFactory.decodeStream(bitmapStream);
-                bitmapStream.close();
+                bitmap = decodeFile(f);
             }
             return bitmap;
         } catch (Throwable ex) {
@@ -350,8 +349,6 @@ public class ImageLoader {
             }
             return null;
         }
-
-
     }
 
     public static Bitmap getBitmap(String URL, Context context, int quality) {
@@ -410,12 +407,12 @@ public class ImageLoader {
         }
     }
 
-    public static Bitmap getBitmap(String URL, FileCache DriveCache, int quality) {
+    public static Bitmap getBitmap(String URL, FileCache cache, int quality) {
         if (ToolKits.WordFormat.isInteger(URL))
-            return getBitmapFromResource(DriveCache.getContext(),
+            return getBitmapFromResource(cache.getContext(),
                     Integer.valueOf(URL));
 
-        File f = DriveCache.getFile(URL);
+        File f = cache.getFile(URL);
 
         // create SD cache
         // CHECK : if trying to decode file which not exist in cache return null
