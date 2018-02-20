@@ -155,6 +155,10 @@ public class Bitmaps {
     }
 
     public static int getDominantColor(Bitmap bitmap) {
+        return getDominantColor(bitmap,  0xFF000000);
+    }
+
+    public static int getDominantColor(Bitmap bitmap, int alpha) {
         if (bitmap == null) {
             return Color.TRANSPARENT;
         }
@@ -186,7 +190,7 @@ public class Bitmaps {
         r = (r << 16) & 0x00FF0000;
         g = (g << 8) & 0x0000FF00;
         b = b & 0x000000FF;
-        color = 0xFF000000 | r | g | b;
+        color =alpha | r | g | b;
         return color;
     }
 

@@ -17,6 +17,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -57,6 +58,8 @@ import android.view.Display;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
+
+import istat.android.base.interfaces.Decoder;
 
 /*
  * Copyright (C) 2014 Istat Dev.
@@ -287,6 +290,7 @@ public final class ToolKits {
     public static final class FileKits {
         public FileKits() {
         }
+
         public static int countLines(String filename) throws IOException {
             InputStream is = new BufferedInputStream(new FileInputStream(filename));
             try {
@@ -309,32 +313,84 @@ public final class ToolKits {
         }
 
         @SuppressLint("NewApi")
-        public static List<File> searchOnProviderFileWithExtention(
-                Context context, String... extend) {
-            List<File> out = new ArrayList();
+        public static List<File> searchOnProviderFileWithExtension(Context context, String... extend) {
+            return searchOnProviderFileWithExtension(context, null, extend);
+        }
+
+        @SuppressLint("NewApi")
+        public static List<File> searchOnProviderFileWithExtension(Context context, String[] ignores, String... extend) {
+            try {
+                return searchOnProviderFileWithExtension(context, new Decoder<File, String>() {
+                    @Override
+                    public File decode(String s) throws Exception {
+                        return new File(s);
+                    }
+                }, ignores, extend);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return new ArrayList<>();
+            }
+        }
+
+        @SuppressLint("NewApi")
+        public static <T> List<T> searchOnProviderFileWithExtension(Context context, Decoder<T, String> decoder, String[] ignores, String... extend) throws Exception {
+            List<T> out = new ArrayList();
             if (extend == null || extend.length == 0)
                 return out;
             ContentResolver cr = context.getContentResolver();
             Uri uri = MediaStore.Files.getContentUri("external");
             String[] projection = new String[]{MediaStore.Files.FileColumns.DATA};
-            String selection = MediaStore.Files.FileColumns.DATA + " LIKE ?";
-            if (extend.length > 1)
-                for (int i = 1; i < extend.length; i++) {
-                    selection += "OR " + MediaStore.Files.FileColumns.DATA
-                            + " LIKE ?";
-
+            String selectionInclude = null;
+            if (extend.length >= 1) {
+                for (int i = 0; i < extend.length; i++) {
+                    if (selectionInclude == null) {
+                        selectionInclude = MediaStore.Files.FileColumns.DATA + " LIKE ?";
+                    } else {
+                        selectionInclude += "OR " + MediaStore.Files.FileColumns.DATA
+                                + " LIKE ?";
+                    }
+                    extend[i] = "%" + extend[i];
                 }
-            for (int i = 0; i < extend.length; i++) {
-                extend[i] = "%" + extend[i];
             }
-            String[] selectionArgs = extend;
+            String selectionIgnore = null;
+            if (ignores != null && ignores.length >= 1) {
+                for (int i = 0; i < ignores.length; i++) {
+                    if (selectionIgnore == null) {
+                        selectionIgnore = MediaStore.Files.FileColumns.DATA + " NOT LIKE ?";
+                    } else {
+                        selectionIgnore += "AND " + MediaStore.Files.FileColumns.DATA
+                                + " NOT LIKE ?";
+                    }
+
+                    ignores[i] = "%" + ignores[i];
+                }
+            }
+            String selection = "";
+            if (!istat.android.base.tools.TextUtils.isEmpty(selectionInclude)) {
+                selection += selectionInclude;
+            }
+            if (!istat.android.base.tools.TextUtils.isEmpty(selectionIgnore)) {
+                selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + selectionIgnore;
+            }
+            List<String> argsList = new ArrayList<>();
+            if (extend != null && extend.length > 0) {
+                argsList.addAll(Arrays.asList(extend));
+            }
+            if (ignores != null && ignores.length > 0) {
+                argsList.addAll(Arrays.asList(ignores));
+            }
             String sortOrder = null;
             Cursor allNonMediaFiles = cr.query(uri, projection, selection,
-                    selectionArgs, sortOrder);
-            if (allNonMediaFiles != null && allNonMediaFiles.getCount() > 0)
+                    argsList.toArray(new String[argsList.size()]), sortOrder);
+            if (allNonMediaFiles != null && allNonMediaFiles.getCount() > 0) {
+                T entity;
                 while (allNonMediaFiles.moveToNext()) {
-                    out.add(new File(allNonMediaFiles.getString(0)));
+                    entity = decoder.decode(allNonMediaFiles.getString(0));
+                    if (entity != null) {
+                        out.add(entity);
+                    }
                 }
+            }
             allNonMediaFiles.close();
             return out;
         }
@@ -939,18 +995,18 @@ public final class ToolKits {
         public static final long copyStream(InputStream is, OutputStream os, int startByte) throws IOException {
             long out = 0;
 
-                byte[] bytes = new byte[1024];
-                is.skip((long) startByte);
+            byte[] bytes = new byte[1024];
+            is.skip((long) startByte);
 
-                while (true) {
-                    int count = is.read(bytes, 0, 1024);
-                    out += count;
-                    if (count == -1) {
-                        break;
-                    }
-
-                    os.write(bytes, 0, count);
+            while (true) {
+                int count = is.read(bytes, 0, 1024);
+                out += count;
+                if (count == -1) {
+                    break;
                 }
+
+                os.write(bytes, 0, count);
+            }
             return out;
 
         }
