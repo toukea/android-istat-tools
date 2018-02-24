@@ -1,5 +1,6 @@
 package istat.android.base.utils;
 
+import istat.android.base.interfaces.EntryGenerator;
 import istat.android.base.memories.FileCache;
 import istat.android.base.memories.MemoryCache;
 import istat.android.base.tools.ToolKits;
@@ -48,8 +49,8 @@ import android.widget.ImageView;
  * @author Toukea Tatsi (Istat)
  */
 public class ImageLoader {
-    //TODO implementer un ImageRender|Manipulator qui manipule l'image avant l'affichage
-    public static int QUALITY_HIGH = 0, QUALITY_LOW = 85;
+    //TODO implementer un ImageRender|Handler qui manipule l'image avant l'affichage
+    public static int QUALITY_HIGH = -1, QUALITY_LOW = 85;
     final static int DEFAULT_PICTURE_ON_PROGRESS = android.R.drawable.ic_dialog_info,
             DEFAULT_PICTURE_ON_ERROR = android.R.drawable.ic_dialog_alert;
     Bitmap progressionBitmapHolder, errorBitmapHolder;
@@ -75,10 +76,8 @@ public class ImageLoader {
     }
 
     public ImageLoader(Context context, int errorIcon, int progressIcon) {
-        this(context);
-        this.errorBitmapHolder = BitmapFactory.decodeResource(context.getResources(), errorIcon);
-        this.errorBitmapHolder = BitmapFactory.decodeResource(context.getResources(), progressIcon);
-
+        this(context, BitmapFactory.decodeResource(context.getResources(), errorIcon)
+                , BitmapFactory.decodeResource(context.getResources(), progressIcon));
     }
 
     public ImageLoader(Context context, Bitmap errorIcon, Bitmap progressIcon) {
@@ -88,7 +87,12 @@ public class ImageLoader {
         executorService = Executors.newFixedThreadPool(5);
         this.errorBitmapHolder = errorIcon;
         this.errorBitmapHolder = progressIcon;
-
+        memoryCache.setEntryGenerator(new EntryGenerator() {
+            @Override
+            public String onGenerateEntry(String name) {
+                return name + "." + imageQuality;
+            }
+        });
     }
 
     public void setFileCache(FileCache fileCache) {
@@ -647,7 +651,7 @@ public class ImageLoader {
                 }
             }
         } else {
-            notifyImageLoadError(photoToLoad, listener, new IOException("Unable to load image friom:" + photoToLoad.url));
+            notifyImageLoadError(photoToLoad, listener, new IOException("Unable to load image from:" + photoToLoad.url));
         }
         if (listener != null) {
             listener.onLoadCompleted(photoToLoad, bitmap != null);

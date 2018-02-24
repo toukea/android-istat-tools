@@ -13,20 +13,40 @@ import istat.android.base.interfaces.FilterAble;
  */
 
 public class FilterAbleArrayList<T> extends ArrayList<T> implements FilterAble<T> {
-    public final List<T> fullContent = new ArrayList();
+    public final List<T> fullContent;
     Filter<T> filter;
 
     public FilterAbleArrayList() {
-        super();
+        this(null);
     }
 
     public FilterAbleArrayList(Collection<T> collection) {
         this(collection, null);
     }
 
+    public FilterAbleArrayList(List<T> collection, Filter<T> filter) {
+        super(collection);
+        if (collection != null) {
+            this.fullContent = collection;
+        } else {
+            this.fullContent = new ArrayList<>();
+            if (!collection.isEmpty()) {
+                this.fullContent.addAll(collection);
+            }
+        }
+
+        this.filter = filter;
+        if (filter != null) {
+            apply(filter);
+        }
+    }
+
     public FilterAbleArrayList(Collection<T> collection, Filter<T> filter) {
         super(collection);
-        this.fullContent.addAll(collection);
+        this.fullContent = new ArrayList<>();
+        if (collection != null && !collection.isEmpty()) {
+            this.fullContent.addAll(collection);
+        }
         this.filter = filter;
         if (filter != null) {
             apply(filter);

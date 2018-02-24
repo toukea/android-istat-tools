@@ -1151,8 +1151,8 @@ public final class ToolKits {
 
         public static final String beginByLowerCase(String word) {
             if (word.length() > 1) {
-                String beggin = word.substring(0, 1).toLowerCase(Locale.getDefault());
-                word = beggin + word.substring(1);
+                String begin = word.substring(0, 1).toLowerCase(Locale.getDefault());
+                word = begin + word.substring(1);
             }
 
             return word;
@@ -1188,7 +1188,7 @@ public final class ToolKits {
             return word.length() <= max ? word : word.substring(0, max) + "...";
         }
 
-        public static final String DistanceToKm(String word) {
+        public static final String distanceToKm(String word) {
             int d = (int) (Double.valueOf(word).doubleValue() * 1.0D);
             return word.equals("-1") ? "---" : (d > 1500 ? d / 1000 + "Km" : d + "m");
         }
