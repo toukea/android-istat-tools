@@ -290,6 +290,23 @@ public final class ToolKits {
     public static final class FileKits {
         public FileKits() {
         }
+//        public static List<File> getStorage(Context context) {
+//            final File[] appsDir = ContextCompat.getExternalFilesDirs(context, null);
+//            final List<File> extRootPaths = new ArrayList<>();
+//            for (final File file : appsDir) {
+//                extRootPaths.add(file.getParentFile().getParentFile().getParentFile().getParentFile());
+//            }
+//            return extRootPaths;
+//        }
+
+        public static void startMediaScanner(Context context, File directory) {
+            startMediaScanner(context, directory.getAbsolutePath());
+        }
+
+        public static void startMediaScanner(Context context, String filePath) {
+            context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED, Uri
+                    .parse("file://" + filePath)));
+        }
 
         public static int countLines(String filename) throws IOException {
             InputStream is = new BufferedInputStream(new FileInputStream(filename));
@@ -313,14 +330,14 @@ public final class ToolKits {
         }
 
         @SuppressLint("NewApi")
-        public static List<File> searchOnProviderFileWithExtension(Context context, String... extend) {
-            return searchOnProviderFileWithExtension(context, null, extend);
+        public static List<File> findFileWithExtension(Context context, String... extend) {
+            return findFileWithExtension(context, null, extend);
         }
 
         @SuppressLint("NewApi")
-        public static List<File> searchOnProviderFileWithExtension(Context context, String[] ignores, String... extend) {
+        public static List<File> findFileWithExtension(Context context, String[] ignores, String... extend) {
             try {
-                return searchOnProviderFileWithExtension(context, new Decoder<File, String>() {
+                return findFileWithExtension(context, new Decoder<File, String>() {
                     @Override
                     public File decode(String s) throws Exception {
                         return new File(s);
@@ -332,8 +349,13 @@ public final class ToolKits {
             }
         }
 
+        /*
+        OpenableColumns.DISPLAY_NAME);
+    int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE
+         */
+
         @SuppressLint("NewApi")
-        public static <T> List<T> searchOnProviderFileWithExtension(Context context, Decoder<T, String> decoder, String[] ignores, String... extend) throws Exception {
+        public static <T> List<T> findFileWithExtension(Context context, Decoder<T, String> decoder, String[] ignoredDir, String... extend) throws Exception {
             List<T> out = new ArrayList();
             if (extend == null || extend.length == 0)
                 return out;
@@ -353,8 +375,8 @@ public final class ToolKits {
                 }
             }
             String selectionIgnore = null;
-            if (ignores != null && ignores.length >= 1) {
-                for (int i = 0; i < ignores.length; i++) {
+            if (ignoredDir != null && ignoredDir.length >= 1) {
+                for (int i = 0; i < ignoredDir.length; i++) {
                     if (selectionIgnore == null) {
                         selectionIgnore = MediaStore.Files.FileColumns.DATA + " NOT LIKE ?";
                     } else {
@@ -362,22 +384,104 @@ public final class ToolKits {
                                 + " NOT LIKE ?";
                     }
 
-                    ignores[i] = "%" + ignores[i];
+                    ignoredDir[i] = "%" + ignoredDir[i];
                 }
             }
             String selection = "";
             if (!istat.android.base.tools.TextUtils.isEmpty(selectionInclude)) {
-                selection += selectionInclude;
+                selection += "(" + selectionInclude + ")";
             }
             if (!istat.android.base.tools.TextUtils.isEmpty(selectionIgnore)) {
-                selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + selectionIgnore;
+                selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + "(" + selectionIgnore + ")";
             }
             List<String> argsList = new ArrayList<>();
             if (extend != null && extend.length > 0) {
                 argsList.addAll(Arrays.asList(extend));
             }
-            if (ignores != null && ignores.length > 0) {
-                argsList.addAll(Arrays.asList(ignores));
+            if (ignoredDir != null && ignoredDir.length > 0) {
+                argsList.addAll(Arrays.asList(ignoredDir));
+            }
+            String sortOrder = null;
+            Cursor allNonMediaFiles = cr.query(uri, projection, selection,
+                    argsList.toArray(new String[argsList.size()]), sortOrder);
+            if (allNonMediaFiles != null && allNonMediaFiles.getCount() > 0) {
+                T entity;
+                while (allNonMediaFiles.moveToNext()) {
+                    entity = decoder.decode(allNonMediaFiles.getString(0));
+                    if (entity != null) {
+                        out.add(entity);
+                    }
+                }
+            }
+            allNonMediaFiles.close();
+            return out;
+        }
+
+        @SuppressLint("NewApi")
+        public static <T> List<T> findFiles(Context context, Decoder<T, String> decoder, String[] ignoredDir, String[] nameContent, String... extend) throws Exception {
+            List<T> out = new ArrayList();
+            if (extend == null || extend.length == 0)
+                return out;
+            ContentResolver cr = context.getContentResolver();
+            Uri uri = MediaStore.Files.getContentUri("external");
+            String[] projection = new String[]{MediaStore.Files.FileColumns.DATA};
+            String selectionInclude = null;
+            if (extend.length >= 1) {
+                for (int i = 0; i < extend.length; i++) {
+                    if (selectionInclude == null) {
+                        selectionInclude = MediaStore.Files.FileColumns.DATA + " LIKE ?";
+                    } else {
+                        selectionInclude += "OR " + MediaStore.Files.FileColumns.DATA
+                                + " LIKE ?";
+                    }
+                    extend[i] = "%" + extend[i];
+                }
+            }
+            String selectionNameContent = null;
+            if (nameContent.length >= 1) {
+                for (int i = 0; i < nameContent.length; i++) {
+                    if (selectionNameContent == null) {
+                        selectionNameContent = "LOWER(" + MediaStore.Files.FileColumns.DATA + ")" + " LIKE ?";
+                    } else {
+                        selectionNameContent += "AND LOWER(" + MediaStore.Files.FileColumns.DATA
+                                + ") LIKE ?";
+                    }
+                    nameContent[i] = "%" + nameContent[i].toLowerCase()+"%";
+                }
+            }
+            String selectionIgnore = null;
+            if (ignoredDir != null && ignoredDir.length >= 1) {
+                for (int i = 0; i < ignoredDir.length; i++) {
+                    if (selectionIgnore == null) {
+                        selectionIgnore = MediaStore.Files.FileColumns.DATA + " NOT LIKE ?";
+                    } else {
+                        selectionIgnore += "AND " + MediaStore.Files.FileColumns.DATA
+                                + " NOT LIKE ?";
+                    }
+
+                    ignoredDir[i] = "%" + ignoredDir[i];
+                }
+            }
+            String selection = "";
+            if (!istat.android.base.tools.TextUtils.isEmpty(selectionInclude)) {
+                selection += "(" + selectionInclude + ")";
+            }
+            if (!istat.android.base.tools.TextUtils.isEmpty(selectionNameContent)) {
+                selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + "(" + selectionNameContent + ")";
+            }
+            if (!istat.android.base.tools.TextUtils.isEmpty(selectionIgnore)) {
+                selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + "(" + selectionIgnore + ")";
+            }
+
+            List<String> argsList = new ArrayList<>();
+            if (extend != null && extend.length > 0) {
+                argsList.addAll(Arrays.asList(extend));
+            }
+            if (nameContent != null && nameContent.length > 0) {
+                argsList.addAll(Arrays.asList(nameContent));
+            }
+            if (ignoredDir != null && ignoredDir.length > 0) {
+                argsList.addAll(Arrays.asList(ignoredDir));
             }
             String sortOrder = null;
             Cursor allNonMediaFiles = cr.query(uri, projection, selection,
