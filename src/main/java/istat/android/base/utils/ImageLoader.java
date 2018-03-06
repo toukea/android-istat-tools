@@ -474,7 +474,9 @@ public class ImageLoader {
 
     // Decodes image and scales it to reduce memory consumption
     public static Bitmap decodeFile(File f, int quality) {
-
+        if (f == null) {
+            return null;
+        }
         try {
 
             // Decode image size
