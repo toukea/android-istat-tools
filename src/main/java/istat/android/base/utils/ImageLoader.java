@@ -3,8 +3,10 @@ package istat.android.base.utils;
 import istat.android.base.interfaces.EntryGenerator;
 import istat.android.base.memories.FileCache;
 import istat.android.base.memories.MemoryCache;
+import istat.android.base.tools.Bitmaps;
 import istat.android.base.tools.ToolKits;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -26,8 +28,9 @@ import android.os.Handler;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.util.Log;
 import android.widget.ImageView;
+
+import static istat.android.base.tools.Bitmaps.getBitmapFromPath;
 
 /*
  * Copyright (C) 2014 Istat Dev.
@@ -93,6 +96,11 @@ public class ImageLoader {
                 return name + "." + imageQuality;
             }
         });
+    }
+
+    public void setUseNewDedicatedMemoryCache() {
+        setUseMemoryCache(true);
+        setMemoryCache(new MemoryCache());
     }
 
     public void setFileCache(FileCache fileCache) {
@@ -207,6 +215,10 @@ public class ImageLoader {
 
     }
 
+    public static Bitmap getBitmap(String url, Context activity, int imageQuality) {
+        return getBitmap(url, new FileCache(activity), new MemoryCache(), imageQuality, DEFAULT_RESOURCE_CONNECTION_HANDLER);
+    }
+
     // Task for the queue
     public class PhotoToLoad {
         public String url;
@@ -237,7 +249,7 @@ public class ImageLoader {
                 Bitmap bmp = getBitmap(photoToLoad.url, mResourceConnectionHandler);
 
                 // set image data in Memory Cache
-                memoryCache.put(photoToLoad.url, bmp);
+
 
                 if (imageViewReused(photoToLoad))
                     return;
@@ -313,157 +325,64 @@ public class ImageLoader {
 
     //TODO cette methode essayer de voir comment délégué a une autre méthode getBitmap
     private Bitmap getBitmap(final String url, final ResourceConnectionHandler resourceConnectionHandler) {
+        return getBitmap(url, useFileCache ? fileCache : null, useMemoryCache ? memoryCache : null, imageQuality, resourceConnectionHandler);
+    }
 
+    public static Bitmap getBitmap(String url, FileCache cache, MemoryCache memoryCache, int quality, final ResourceConnectionHandler resourceConnectionHandler) {
         if (ToolKits.WordFormat.isInteger(url))
-            return getBitmapFromResource(context,
+            return Bitmaps.getBitmapFromResource(cache.getContext(),
                     Integer.valueOf(url));
 
-        File f = getFileCache().getFile(url);
+        File f = cache != null ? cache.resolve(url) : null;
 
         // create SD cache
         // CHECK : if trying to decode file which not exist in cache return null
-        Bitmap b;
-        if (imageQuality == QUALITY_HIGH) {
-            b = getBitmapFromPath(f.getAbsolutePath());
-        } else {
-            b = decodeFile(f, imageQuality);
+
+        if (f != null) {
+            Bitmap b;
+            if (quality == QUALITY_HIGH) {
+                b = getBitmapFromPath(f.getAbsolutePath());
+            } else {
+                b = decodeFile(f, quality);
+            }
+            if (b != null)
+                return b;
         }
-
-        if (b != null)
-            return b;
-
         // Download image file create web
         try {
             Bitmap bitmap;
             InputStream is = resourceConnectionHandler.onConnect(url);
-            OutputStream os = new FileOutputStream(f);
-            ToolKits.Stream.copyStream(is, os);
-            os.close();
-            resourceConnectionHandler.onDisconnect(url, is);
-            if (imageQuality == QUALITY_HIGH) {
-                bitmap = getBitmapFromPath(f.getAbsolutePath());
+            if (f != null) {
+                OutputStream os = new FileOutputStream(f);
+                ToolKits.Stream.copyStream(is, os);
+                os.close();
+                resourceConnectionHandler.onDisconnect(url, is);
+                if (quality == QUALITY_HIGH) {
+                    bitmap = getBitmapFromPath(f.getAbsolutePath());
+                } else {
+                    bitmap = decodeFile(f, quality);
+                }
             } else {
-                bitmap = decodeFile(f);
+                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                ToolKits.Stream.copyStream(is, os);
+                byte[] bytes = os.toByteArray();
+                resourceConnectionHandler.onDisconnect(url, is);
+                if (quality == QUALITY_HIGH) {
+                    bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                } else {
+                    bitmap = decodeByte(bytes, quality);
+                }
+                os.close();
+            }
+            if (memoryCache != null) {
+                memoryCache.put(url, bitmap);
             }
             return bitmap;
         } catch (Throwable ex) {
             ex.printStackTrace();
-            if (ex instanceof OutOfMemoryError) {
+            if (ex instanceof OutOfMemoryError && memoryCache != null) {
                 memoryCache.clear();
             }
-            return null;
-        }
-    }
-
-    public static Bitmap getBitmap(String URL, Context context, int quality) {
-        if (ToolKits.WordFormat.isInteger(URL))
-            return getBitmapFromResource(context,
-                    Integer.valueOf(URL));
-
-        File f = new FileCache(context).getFile(URL);
-
-        // create SD cache
-        // CHECK : if trying to decode file which not exist in cache return null
-        Bitmap b;
-
-        if (quality == QUALITY_HIGH) {
-            b = getBitmapFromPath(f.getAbsolutePath());
-        } else {
-            b = decodeFile(f, quality);
-        }
-        if (b != null)
-            return b;
-
-        // Download image file create web
-        try {
-
-            Bitmap bitmap = null;
-            InputStream is;
-            URL imageUrl = new URL(URL);
-            URLConnection urlConnection = imageUrl.openConnection();
-            if (urlConnection instanceof HttpURLConnection) {
-                HttpURLConnection conn = (HttpURLConnection) imageUrl
-                        .openConnection();
-                conn.setConnectTimeout(30000);
-                conn.setReadTimeout(30000);
-                conn.setInstanceFollowRedirects(true);
-                is = conn.getInputStream();
-            } else {
-                is = urlConnection.getInputStream();
-            }
-            OutputStream os = new FileOutputStream(f);
-            ToolKits.Stream.copyStream(is, os);
-            os.close();
-            if (urlConnection instanceof HttpURLConnection) {
-                ((HttpURLConnection) urlConnection).disconnect();
-            }
-            if (quality == QUALITY_HIGH) {
-                bitmap = getBitmapFromPath(f.getAbsolutePath());
-            } else {
-                bitmap = decodeFile(f, quality);
-            }
-            return bitmap;
-
-        } catch (Throwable ex) {
-
-            Log.e("error", "" + ex);
-            return null;
-        }
-    }
-
-    public static Bitmap getBitmap(String URL, FileCache cache, int quality) {
-        if (ToolKits.WordFormat.isInteger(URL))
-            return getBitmapFromResource(cache.getContext(),
-                    Integer.valueOf(URL));
-
-        File f = cache.getFile(URL);
-
-        // create SD cache
-        // CHECK : if trying to decode file which not exist in cache return null
-        Bitmap b;
-
-        if (quality == QUALITY_HIGH) {
-            b = getBitmapFromPath(f.getAbsolutePath());
-        } else {
-            b = decodeFile(f, quality);
-        }
-
-        if (b != null)
-            return b;
-
-        // Download image file create web
-        try {
-
-            Bitmap bitmap = null;
-            InputStream is;
-            URL imageUrl = new URL(URL);
-            URLConnection urlConnection = imageUrl.openConnection();
-            if (urlConnection instanceof HttpURLConnection) {
-                HttpURLConnection conn = (HttpURLConnection) imageUrl
-                        .openConnection();
-                conn.setConnectTimeout(30000);
-                conn.setReadTimeout(30000);
-                conn.setInstanceFollowRedirects(true);
-                is = conn.getInputStream();
-            } else {
-                is = urlConnection.getInputStream();
-            }
-            OutputStream os = new FileOutputStream(f);
-            ToolKits.Stream.copyStream(is, os);
-            os.close();
-            if (urlConnection instanceof HttpURLConnection)
-                ((HttpURLConnection) urlConnection).disconnect();
-            if (quality == QUALITY_HIGH) {
-                bitmap = getBitmapFromPath(f.getAbsolutePath());
-            } else {
-                bitmap = decodeFile(f, quality);
-            }
-
-            return bitmap;
-
-        } catch (Throwable ex) {
-
-            Log.e("error", "" + ex);
             return null;
         }
     }
@@ -512,6 +431,46 @@ public class ImageLoader {
 
         } catch (FileNotFoundException e) {
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static Bitmap decodeByte(byte[] f, int quality) {
+        if (f == null) {
+            return null;
+        }
+        try {
+
+            // Decode image size
+            BitmapFactory.Options o = new BitmapFactory.Options();
+            o.inJustDecodeBounds = true;
+            BitmapFactory.decodeByteArray(f, 0, f.length, o);
+
+            // Find the correct scale value. It should be the power of 2.
+
+            // Set width/height of recreated image
+            final int REQUIRED_SIZE = quality;
+
+            int width_tmp = o.outWidth, height_tmp = o.outHeight;
+            int scale = 1;
+            while (true) {
+                if (width_tmp / 2 < REQUIRED_SIZE
+                        || height_tmp / 2 < REQUIRED_SIZE)
+                    break;
+                width_tmp /= 2;
+                height_tmp /= 2;
+                scale *= 2;
+            }
+
+            // decode with current scale values
+            BitmapFactory.Options o2 = new BitmapFactory.Options();
+            o2.inSampleSize = scale;
+
+            Bitmap bitmap = BitmapFactory.decodeByteArray(f, 0, f.length, o2);
+            return bitmap;
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -585,24 +544,6 @@ public class ImageLoader {
     private boolean useFileCache = true;
     private boolean useMemoryCache = true;
 
-    public static Bitmap getBitmapFromPath(String path) {
-        Bitmap im = null;
-        try {
-            im = BitmapFactory.decodeFile(path);
-        } catch (Exception e) {
-        }
-        return im;
-    }
-
-    public static Bitmap getBitmapFromResource(Context ctx, int resourceId) {
-        Bitmap im = null;
-        try {
-            im = BitmapFactory.decodeResource(ctx.getResources(), resourceId);
-        } catch (Exception e) {
-        }
-        return im;
-    }
-
     public Context getContext() {
         return context;
     }
@@ -658,5 +599,9 @@ public class ImageLoader {
         if (listener != null) {
             listener.onLoadCompleted(photoToLoad, bitmap != null);
         }
+    }
+
+    public MemoryCache getMemoryCache() {
+        return memoryCache;
     }
 }
