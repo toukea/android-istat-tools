@@ -3,6 +3,7 @@ package istat.android.base.memories;
 import java.io.File;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.util.Log;
 
 import istat.android.base.interfaces.EntryGenerator;
@@ -52,12 +53,19 @@ public class FileCache {
             cacheDir = new File(context.getCacheDir(), dirNames);
         }
         Log.d("FileCache", "CacheDir::" + cacheDir.getAbsolutePath());
-        createCacheDir();
     }
 
     public FileCache(Context context, File cacheDir) {
+        this(context, cacheDir, null);
+    }
+
+    public FileCache(Context context, File cacheDir, String nameSpace) {
         this.context = context;
-        this.cacheDir = cacheDir;
+        if (TextUtils.isEmpty(nameSpace)) {
+            this.cacheDir = cacheDir;
+        } else {
+            this.cacheDir = new File(cacheDir, nameSpace);
+        }
     }
 
     private void createCacheDir() {
@@ -65,33 +73,6 @@ public class FileCache {
             // createDirectives cache dir in your application context
             cacheDir.mkdirs();
         }
-    }
-
-    public FileCache getInternal() {
-
-        // if checking on simulator the createDirectives cache dir in your application
-        // context
-        cacheDir = context.getCacheDir();
-
-        createCacheDir();
-        return this;
-    }
-
-    public FileCache getExternal() {
-        if (android.os.Environment.getExternalStorageState().equals(
-                android.os.Environment.MEDIA_MOUNTED)) {
-            // if SDCARD is mounted (SDCARD is present on device and mounted)
-            cacheDir = new File(
-                    android.os.Environment.getExternalStorageDirectory(),
-                    dirName);
-        } else {
-            // if checking on simulator the createDirectives cache dir in your application
-            // context
-            cacheDir = context.getCacheDir();
-        }
-
-        createCacheDir();
-        return this;
     }
 
     public File getRootDir() {
@@ -104,23 +85,26 @@ public class FileCache {
         return new File(getRootDir(), name);
     }
 
-    public File getFile(String url) {
+    public File resolve(String uri) {
         // Identify images by hashcode or encode by URLEncoder.encode.
-        String filename = entryGenerator.onGenerateEntry(url);
+        String filename = entryGenerator.onGenerateEntry(uri);
+        if (TextUtils.isEmpty(filename)) {
+            return null;
+        }
         createCacheDir();
         File f = new File(cacheDir, filename);
         return f;
     }
 
-    public File getFileFromCacheName(String fullName) {
+    public File getFile(String relativeFilePath) {
         // Identify images by hashcode or encode by URLEncoder.encode.
         createCacheDir();
-        File f = new File(cacheDir, fullName);
+        File f = new File(cacheDir, relativeFilePath);
         return f;
 
     }
 
-    public long getCacheSize() {
+    public long getCacheContentBytes() {
         // list all files inside cache directory
         long out = 0;
         createCacheDir();
@@ -159,15 +143,6 @@ public class FileCache {
             f.delete();
     }
 
-    public static long getInternalCacheSize(Context context) {
-
-        // if SDCARD is mounted (SDCARD is present on device and mounted)
-        File cacheDir = context.getCacheDir();
-
-        return getDirSize(cacheDir);
-
-    }
-
     public FileCache setDirName(String dirname) {
         dirName = dirname;
         if (android.os.Environment.getExternalStorageState().equals(
@@ -180,29 +155,6 @@ public class FileCache {
         }
         createCacheDir();
         return this;
-    }
-
-    public static void clearApplicationData(Context context) {
-        File cache = context.getCacheDir();
-        File appDir = new File(cache.getParent());
-        if (appDir.exists()) {
-            String[] children = appDir.list();
-            for (String s : children) {
-                if (!s.equals("lib")) {
-                    deleteDir(new File(appDir, s));
-                }
-            }
-        }
-    }
-
-    public static void clearInternalCache(Context context) {
-        try {
-            File dir = context.getCacheDir();
-            if (dir != null && dir.isDirectory()) {
-                deleteDir(dir);
-            }
-        } catch (Exception e) {
-        }
     }
 
     public static boolean deleteDir(File dir) {
@@ -247,6 +199,9 @@ public class FileCache {
     public final static EntryGenerator DEFAULT_ENTRY_GENERATOR = new EntryGenerator() {
         @Override
         public String onGenerateEntry(String name) {
+            if (name == null || name.startsWith("file://")) {
+                return null;
+            }
             String filename = String.valueOf(name.hashCode());
             return filename;
         }
@@ -264,5 +219,18 @@ public class FileCache {
     public File getCacheDir() {
         this.createCacheDir();
         return this.cacheDir;
+    }
+
+    public EntryGenerator getEntryGenerator() {
+        return entryGenerator;
+    }
+
+    public File remove(String iconUri) {
+        File file = resolve(iconUri);
+        if (file != null && file.exists()) {
+            file.delete();
+            return file;
+        }
+        return null;
     }
 }

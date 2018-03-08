@@ -6,10 +6,13 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+
 import android.graphics.Bitmap;
 import android.util.Log;
 
 import istat.android.base.interfaces.EntryGenerator;
+import istat.android.base.tools.TextUtils;
 
 /*
  * Copyright (C) 2014 Istat Dev.
@@ -26,12 +29,11 @@ import istat.android.base.interfaces.EntryGenerator;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
- * 
  * @author Toukea Tatsi (Istat)
- *
  */
-public class MemoryCache {
+public class MemoryCache implements Cache<Bitmap> {
 
     private static final String TAG = "MemoryCache";
 
@@ -56,13 +58,19 @@ public class MemoryCache {
         Log.i(TAG, "MemoryCache will use up to " + limit / 1024. / 1024. + "MB");
     }
 
-    public boolean containBitmap(String id) {
+    public boolean containkey(String id) {
         String entry = this.entryGenerator.onGenerateEntry(id);
+        if (TextUtils.isEmpty(entry)) {
+            return false;
+        }
         return cache.containsKey(entry);
     }
 
     public Bitmap get(String id) {
         String entry = this.entryGenerator.onGenerateEntry(id);
+        if (TextUtils.isEmpty(entry)) {
+            return null;
+        }
         try {
             if (!cache.containsKey(entry))
                 return null;
@@ -74,16 +82,39 @@ public class MemoryCache {
         }
     }
 
-    public void put(String id, Bitmap bitmap) {
+    @Override
+    public int size() {
+        return cache.size();
+    }
+
+    public Bitmap remove(String id) {
         String entry = this.entryGenerator.onGenerateEntry(id);
+        if (TextUtils.isEmpty(entry)) {
+            return null;
+        }
+        return cache.remove(entry);
+    }
+
+    @Override
+    public boolean containsKey(String filePath) {
+        return false;
+    }
+
+    public Bitmap put(String id, Bitmap bitmap) {
+        String entry = this.entryGenerator.onGenerateEntry(id);
+        if (TextUtils.isEmpty(entry)) {
+            return null;
+        }
         try {
             if (cache.containsKey(entry))
                 size -= getSizeInBytes(cache.get(entry));
-            cache.put(entry, bitmap);
+            Bitmap bitmap1 = cache.put(entry, bitmap);
             size += getSizeInBytes(bitmap);
             checkSize();
+            return bitmap1;
         } catch (Throwable th) {
             th.printStackTrace();
+            return null;
         }
     }
 
@@ -113,6 +144,16 @@ public class MemoryCache {
         }
     }
 
+    @Override
+    public boolean isEmpty() {
+        return cache.isEmpty();
+    }
+
+    @Override
+    public Set<String> keySet() {
+        return cache.keySet();
+    }
+
     long getSizeInBytes(Bitmap bitmap) {
         if (bitmap == null)
             return 0;
@@ -122,16 +163,23 @@ public class MemoryCache {
     final static EntryGenerator DEFAULT_ENTRY_GENERATOR = new EntryGenerator() {
         @Override
         public String onGenerateEntry(String name) {
+            if (name == null) {
+                return null;
+            }
             return name;
         }
     };
 
-    EntryGenerator entryGenerator=DEFAULT_ENTRY_GENERATOR;
+    EntryGenerator entryGenerator = DEFAULT_ENTRY_GENERATOR;
 
     public void setEntryGenerator(EntryGenerator entryGenerator) {
         if (entryGenerator == null) {
             entryGenerator = DEFAULT_ENTRY_GENERATOR;
         }
         this.entryGenerator = entryGenerator;
+    }
+
+    public EntryGenerator getEntryGenerator() {
+        return entryGenerator;
     }
 }
