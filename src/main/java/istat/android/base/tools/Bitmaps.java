@@ -1,8 +1,11 @@
 package istat.android.base.tools;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 
 import android.content.Context;
 import android.content.Intent;
@@ -15,6 +18,8 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.util.Base64;
 
 /*
@@ -40,6 +45,31 @@ public class Bitmaps {
     public static Bitmap base64ToBitmap(String b64) {
         byte[] imageAsBytes = Base64.decode(b64.getBytes(), Base64.DEFAULT);
         return BitmapFactory.decodeByteArray(imageAsBytes, 0, imageAsBytes.length);
+    }
+
+    public static Bitmap drawableToBitmap(Drawable drawable) {
+        if (drawable instanceof BitmapDrawable) {
+            return ((BitmapDrawable) drawable).getBitmap();
+        }
+
+        int width = drawable.getIntrinsicWidth();
+        width = width > 0 ? width : 1;
+        int height = drawable.getIntrinsicHeight();
+        height = height > 0 ? height : 1;
+
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+
+        return bitmap;
+    }
+
+    public static InputStream toInputStream(Bitmap bitmap) {
+        int size = bitmap.getHeight() * bitmap.getRowBytes();
+        ByteBuffer buffer = ByteBuffer.allocate(size);
+        bitmap.copyPixelsToBuffer(buffer);
+        return new ByteArrayInputStream(buffer.array());
     }
 
     public static Bitmap getBitmapFromURL(String url, boolean isPurgeable, boolean isScaled, int sampleSize) {
@@ -105,11 +135,12 @@ public class Bitmaps {
         return im;
     }
 
-    public static Bitmap getBitmapFromRessource(Context ctx, int ressource) {
+    public static Bitmap getBitmapFromResource(Context ctx, int resource) {
         Bitmap im = null;
         try {
-            im = BitmapFactory.decodeResource(ctx.getResources(), ressource);
+            im = BitmapFactory.decodeResource(ctx.getResources(), resource);
         } catch (Exception e) {
+            e.printStackTrace();
         }
         return im;
     }
@@ -155,7 +186,7 @@ public class Bitmaps {
     }
 
     public static int getDominantColor(Bitmap bitmap) {
-        return getDominantColor(bitmap,  0xFF000000);
+        return getDominantColor(bitmap, 0xFF000000);
     }
 
     public static int getDominantColor(Bitmap bitmap, int alpha) {
@@ -190,7 +221,7 @@ public class Bitmaps {
         r = (r << 16) & 0x00FF0000;
         g = (g << 8) & 0x0000FF00;
         b = b & 0x000000FF;
-        color =alpha | r | g | b;
+        color = alpha | r | g | b;
         return color;
     }
 

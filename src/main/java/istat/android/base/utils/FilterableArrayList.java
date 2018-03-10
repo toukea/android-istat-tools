@@ -3,28 +3,27 @@ package istat.android.base.utils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Predicate;
 
 import istat.android.base.interfaces.Filter;
-import istat.android.base.interfaces.FilterAble;
+import istat.android.base.interfaces.Filterable;
 
 /**
  * Created by istat on 22/01/18.
  */
 
-public class FilterAbleArrayList<T> extends ArrayList<T> implements FilterAble<T> {
+public class FilterableArrayList<T> extends ArrayList<T> implements Filterable<T> {
     public final List<T> fullContent;
     Filter<T> filter;
 
-    public FilterAbleArrayList() {
+    public FilterableArrayList() {
         this(null);
     }
 
-    public FilterAbleArrayList(Collection<T> collection) {
+    public FilterableArrayList(Collection<T> collection) {
         this(collection, null);
     }
 
-    public FilterAbleArrayList(List<T> collection, Filter<T> filter) {
+    public FilterableArrayList(List<T> collection, Filter<T> filter) {
         super(collection);
         if (collection != null) {
             this.fullContent = collection;
@@ -41,7 +40,7 @@ public class FilterAbleArrayList<T> extends ArrayList<T> implements FilterAble<T
         }
     }
 
-    public FilterAbleArrayList(Collection<T> collection, Filter<T> filter) {
+    public FilterableArrayList(Collection<T> collection, Filter<T> filter) {
         super(collection);
         this.fullContent = new ArrayList<>();
         if (collection != null && !collection.isEmpty()) {

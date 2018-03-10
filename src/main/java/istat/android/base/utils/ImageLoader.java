@@ -1,6 +1,7 @@
 package istat.android.base.utils;
 
 import istat.android.base.interfaces.EntryGenerator;
+import istat.android.base.memories.Cache;
 import istat.android.base.memories.FileCache;
 import istat.android.base.memories.MemoryCache;
 import istat.android.base.tools.Bitmaps;
@@ -16,6 +17,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Collections;
@@ -28,6 +30,7 @@ import android.os.Handler;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.widget.ImageView;
 
 import static istat.android.base.tools.Bitmaps.getBitmapFromPath;
@@ -52,6 +55,7 @@ import static istat.android.base.tools.Bitmaps.getBitmapFromPath;
  * @author Toukea Tatsi (Istat)
  */
 public class ImageLoader {
+    public final static String TAG = "ImageLoader";
     //TODO implementer un ImageRender|Handler qui manipule l'image avant l'affichage
     public static int QUALITY_HIGH = -1, QUALITY_LOW = 85;
     final static int DEFAULT_PICTURE_ON_PROGRESS = android.R.drawable.ic_dialog_info,
@@ -89,18 +93,13 @@ public class ImageLoader {
         // threads operating off a shared unbounded queue.
         executorService = Executors.newFixedThreadPool(5);
         this.errorBitmapHolder = errorIcon;
-        this.errorBitmapHolder = progressIcon;
+        this.progressionBitmapHolder = progressIcon;
         memoryCache.setEntryGenerator(new EntryGenerator() {
             @Override
             public String onGenerateEntry(String name) {
                 return name + "." + imageQuality;
             }
         });
-    }
-
-    public void setUseNewDedicatedMemoryCache() {
-        setUseMemoryCache(true);
-        setMemoryCache(new MemoryCache());
     }
 
     public void setFileCache(FileCache fileCache) {
@@ -110,12 +109,6 @@ public class ImageLoader {
         this.fileCache = fileCache;
     }
 
-    public void setMemoryCache(MemoryCache memoryCache) {
-        if (memoryCache == null) {
-            memoryCache = DEFAULT_MEMORY_CACHE;
-        }
-        this.memoryCache = memoryCache;
-    }
 
     public void setImageQuality(int imageQuality) {
         this.imageQuality = imageQuality;
@@ -145,9 +138,6 @@ public class ImageLoader {
         progressionBitmapHolder = icon;
     }
 
-//	public void setLoadListener(LoadCallback loadCallback) {
-//		this.mLoadListener = loadCallback;
-//	}
 
     public Bitmap getErrorIcon() {
         return errorBitmapHolder;
@@ -156,10 +146,6 @@ public class ImageLoader {
     public Bitmap getProgressIcon() {
         return progressionBitmapHolder;
     }
-
-//	public LoadCallback getLoadListener() {
-//		return mLoadListener;
-//	}
 
     public FileCache getFileCache() {
         if (fileCache == null) {
@@ -171,10 +157,6 @@ public class ImageLoader {
     public void displayImage(int resourceId, ImageView imageView, LoadCallback mLoadListener) {
         displayImage(resourceId + "", imageView, mLoadListener);
     }
-
-//	public void load(String path) {
-//		displayImage(path, null, mLoadListener);
-//	}
 
     public void load(String path, LoadCallback mLoadListener) {
         displayImage(path, null, mLoadListener);
@@ -282,6 +264,10 @@ public class ImageLoader {
         @Override
         public InputStream onConnect(String url) {
             try {
+                URI uri = URI.create(url);
+                if (uri.getScheme() == null) {
+                    url = "file://" + url;
+                }
                 URL imageUrl = new URL(url);
                 URLConnection urlConnection = imageUrl.openConnection();
                 connectionMap.put(url, urlConnection);
@@ -325,25 +311,24 @@ public class ImageLoader {
 
     //TODO cette methode essayer de voir comment délégué a une autre méthode getBitmap
     private Bitmap getBitmap(final String url, final ResourceConnectionHandler resourceConnectionHandler) {
+        if (ToolKits.WordFormat.isInteger(url))
+            return Bitmaps.getBitmapFromResource(getContext(),
+                    Integer.valueOf(url));
         return getBitmap(url, useFileCache ? fileCache : null, useMemoryCache ? memoryCache : null, imageQuality, resourceConnectionHandler);
     }
 
     public static Bitmap getBitmap(String url, FileCache cache, MemoryCache memoryCache, int quality, final ResourceConnectionHandler resourceConnectionHandler) {
-        if (ToolKits.WordFormat.isInteger(url))
-            return Bitmaps.getBitmapFromResource(cache.getContext(),
-                    Integer.valueOf(url));
-
-        File f = cache != null ? cache.resolve(url) : null;
+        File cachedFile = cache != null ? cache.resolve(url) : null;
 
         // create SD cache
         // CHECK : if trying to decode file which not exist in cache return null
 
-        if (f != null) {
+        if (cachedFile != null && cachedFile.exists()) {
             Bitmap b;
             if (quality == QUALITY_HIGH) {
-                b = getBitmapFromPath(f.getAbsolutePath());
+                b = getBitmapFromPath(cachedFile.getAbsolutePath());
             } else {
-                b = decodeFile(f, quality);
+                b = decodeFile(cachedFile, quality);
             }
             if (b != null)
                 return b;
@@ -352,15 +337,18 @@ public class ImageLoader {
         try {
             Bitmap bitmap;
             InputStream is = resourceConnectionHandler.onConnect(url);
-            if (f != null) {
-                OutputStream os = new FileOutputStream(f);
+            if (is == null) {
+                return null;
+            }
+            if (cachedFile != null) {
+                OutputStream os = new FileOutputStream(cachedFile);
                 ToolKits.Stream.copyStream(is, os);
                 os.close();
                 resourceConnectionHandler.onDisconnect(url, is);
                 if (quality == QUALITY_HIGH) {
-                    bitmap = getBitmapFromPath(f.getAbsolutePath());
+                    bitmap = getBitmapFromPath(cachedFile.getAbsolutePath());
                 } else {
-                    bitmap = decodeFile(f, quality);
+                    bitmap = decodeFile(cachedFile, quality);
                 }
             } else {
                 ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -379,6 +367,7 @@ public class ImageLoader {
             }
             return bitmap;
         } catch (Throwable ex) {
+            Log.e(TAG, "error getting bitmap at: " + url);
             ex.printStackTrace();
             if (ex instanceof OutOfMemoryError && memoryCache != null) {
                 memoryCache.clear();
@@ -429,8 +418,7 @@ public class ImageLoader {
             stream2.close();
             return bitmap;
 
-        } catch (FileNotFoundException e) {
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -524,7 +512,6 @@ public class ImageLoader {
         }
     }
 
-
     public void setUseFileCache(boolean useFileCache) {
         this.useFileCache = useFileCache;
     }
@@ -548,10 +535,6 @@ public class ImageLoader {
         return context;
     }
 
-//    public interface DisplayHandler {
-//        boolean onHandle(PhotoToLoad photoToLoad);
-//    }
-
     public interface LoadCallback {
         boolean onLoad(PhotoToLoad phLoad);
 
@@ -572,7 +555,7 @@ public class ImageLoader {
     }
 
     private void notifyImageLoad(PhotoToLoad photoToLoad, LoadCallback listener) {
-        if (photoToLoad.imageView != null && progressionBitmapHolder != null && (listener == null || (listener != null && !listener.onLoad(photoToLoad)))) {
+        if ((listener == null || (listener != null && !listener.onLoad(photoToLoad))) && (photoToLoad.imageView != null && progressionBitmapHolder != null)) {
             photoToLoad.imageView.setImageBitmap(progressionBitmapHolder);
         }
     }
@@ -581,7 +564,7 @@ public class ImageLoader {
         if (listener != null) {
             listener.onLoadCompleted(photoToLoad, false);
         }
-        if (photoToLoad.imageView != null && errorBitmapHolder != null && (listener == null || (listener != null && !listener.onLoadError(photoToLoad, th)))) {
+        if ((listener == null || (listener != null && !listener.onLoadError(photoToLoad, th))) && (photoToLoad.imageView != null && errorBitmapHolder != null)) {
             photoToLoad.imageView.setImageBitmap(errorBitmapHolder);
         }
     }
@@ -601,7 +584,7 @@ public class ImageLoader {
         }
     }
 
-    public MemoryCache getMemoryCache() {
+    public Cache<Bitmap> getMemoryCache() {
         return memoryCache;
     }
 }

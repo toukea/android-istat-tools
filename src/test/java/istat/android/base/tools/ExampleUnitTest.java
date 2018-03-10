@@ -29,6 +29,13 @@ public class ExampleUnitTest {
         assertTrue(matches);
     }
 
+    @Test
+    public void stringValue() throws Exception {
+        CharSequence charSequence = null;
+        String stringValue = String.valueOf(charSequence);
+        assertTrue(stringValue == null);
+    }
+
     /*
     {
 				"id_pharmacie":"15",
