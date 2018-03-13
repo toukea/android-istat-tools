@@ -197,7 +197,7 @@ public class ImageLoader {
 
     }
 
-    public static Bitmap getBitmap(String url, Context activity, int imageQuality) {
+    public static Bitmap getBitmap(String url, Context activity, int imageQuality) throws IOException {
         return getBitmap(url, new FileCache(activity), new MemoryCache(), imageQuality, DEFAULT_RESOURCE_CONNECTION_HANDLER);
     }
 
@@ -310,14 +310,14 @@ public class ImageLoader {
     }
 
     //TODO cette methode essayer de voir comment délégué a une autre méthode getBitmap
-    private Bitmap getBitmap(final String url, final ResourceConnectionHandler resourceConnectionHandler) {
+    private Bitmap getBitmap(final String url, final ResourceConnectionHandler resourceConnectionHandler) throws IOException {
         if (ToolKits.WordFormat.isInteger(url))
             return Bitmaps.getBitmapFromResource(getContext(),
                     Integer.valueOf(url));
         return getBitmap(url, useFileCache ? fileCache : null, useMemoryCache ? memoryCache : null, imageQuality, resourceConnectionHandler);
     }
 
-    public static Bitmap getBitmap(String url, FileCache cache, MemoryCache memoryCache, int quality, final ResourceConnectionHandler resourceConnectionHandler) {
+    public static Bitmap getBitmap(String url, FileCache cache, MemoryCache memoryCache, int quality, final ResourceConnectionHandler resourceConnectionHandler) throws IOException {
         File cachedFile = cache != null ? cache.resolve(url) : null;
 
         // create SD cache
@@ -366,10 +366,10 @@ public class ImageLoader {
                 memoryCache.put(url, bitmap);
             }
             return bitmap;
-        } catch (Throwable ex) {
+        } catch (OutOfMemoryError ex) {
             Log.e(TAG, "error getting bitmap at: " + url);
             ex.printStackTrace();
-            if (ex instanceof OutOfMemoryError && memoryCache != null) {
+            if (memoryCache != null) {
                 memoryCache.clear();
             }
             return null;
@@ -577,7 +577,7 @@ public class ImageLoader {
                 }
             }
         } else {
-            notifyImageLoadError(photoToLoad, listener, new IOException("Unable to load image from:" + photoToLoad.url));
+            notifyImageLoadError(photoToLoad, listener, new IOException("Unable to load image from: " + photoToLoad.url));
         }
         if (listener != null) {
             listener.onLoadCompleted(photoToLoad, bitmap != null);
