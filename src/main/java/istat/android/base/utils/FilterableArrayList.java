@@ -105,6 +105,20 @@ public class FilterableArrayList<T> extends ArrayList<T> implements Filterable<T
         return super.remove(index);
     }
 
+    public boolean filterIndex(int index) {
+        T entity = get(index);
+        if (entity != null) {
+            if (getFilter() == null) {
+                return false;
+            }
+            if (!getFilter().apply(entity)) {
+                super.remove(entity);
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public boolean remove(Object o) {
         this.fullContent.remove(o);
