@@ -1,12 +1,14 @@
 package istat.android.base.memories;
 
 import java.io.File;
+import java.util.Set;
 
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
 import istat.android.base.interfaces.EntryGenerator;
+import istat.android.base.tools.ToolKits;
 
 /*
  * Copyright (C) 2014 Istat Dev.
@@ -27,7 +29,7 @@ import istat.android.base.interfaces.EntryGenerator;
 /**
  * @author Toukea Tatsi (Istat)
  */
-public class FileCache {
+public class FileCache implements Cache<File> {
     File cacheDir;
     String dirName = "istat";
     Context context;
@@ -232,5 +234,35 @@ public class FileCache {
             return file;
         }
         return null;
+    }
+
+    @Override
+    public File put(String key, File value) {
+        return value;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+
+    @Override
+    public Set<String> keySet() {
+        return null;
+    }
+
+    @Override
+    public boolean containsKey(String filePath) {
+        return false;
+    }
+
+    @Override
+    public File get(String name) {
+        return null;
+    }
+
+    @Override
+    public int size() {
+        return getRootDir().list().length;
     }
 }

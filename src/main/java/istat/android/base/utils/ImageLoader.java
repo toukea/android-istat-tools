@@ -30,6 +30,7 @@ import android.os.Handler;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.ImageView;
 
@@ -72,7 +73,7 @@ public class ImageLoader {
             .synchronizedMap(new WeakHashMap<ImageView, String>());
     ExecutorService executorService;
     // handler to display images in UI thread
-    Handler handler = new Handler();
+    Handler handler = new Handler(Looper.getMainLooper());
 
     public ImageLoader(Context context) {
         this(context,
