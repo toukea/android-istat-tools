@@ -1238,16 +1238,18 @@ public final class ToolKits {
             return cal;
         }
 
-        public static final String toSentence(String word, String endingPontuation) {
-            word = beginByUpperCase(word);
-            int index = word.indexOf(endingPontuation);
-            return index <= 0 ? word + endingPontuation : word;
+        public static final String toSentence(String word, String endingPunctuation) {
+            word = beginByUpperCase(word.trim());
+            if(!word.matches("\\.$|!$|\\?$")){
+                return word+endingPunctuation;
+            }
+          return word;
         }
 
         public static final String beginByUpperCase(String word) {
             if (word.length() > 1) {
-                String beggin = word.substring(0, 1).toUpperCase(Locale.getDefault());
-                word = beggin + word.substring(1);
+                String begin = word.substring(0, 1).toUpperCase(Locale.getDefault());
+                word = begin + word.substring(1);
             }
 
             return word;
