@@ -446,7 +446,7 @@ public final class ToolKits {
                         selectionNameContent += "AND LOWER(" + MediaStore.Files.FileColumns.DATA
                                 + ") LIKE ?";
                     }
-                    nameContent[i] = "%" + nameContent[i].toLowerCase()+"%";
+                    nameContent[i] = "%" + nameContent[i].toLowerCase() + "%";
                 }
             }
             String selectionIgnore = null;
@@ -1240,10 +1240,12 @@ public final class ToolKits {
 
         public static final String toSentence(String word, String endingPunctuation) {
             word = beginByUpperCase(word.trim());
-            if(!word.matches("\\.$|!$|\\?$")){
-                return word+endingPunctuation;
+            String regex = "(.*\\?)$|(.*\\.)$|(.*!)$|(.*:)$";
+            boolean match = word.matches(regex);
+            if (match) {
+                return word;
             }
-          return word;
+            return word + endingPunctuation;
         }
 
         public static final String beginByUpperCase(String word) {

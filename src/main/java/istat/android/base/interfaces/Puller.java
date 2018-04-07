@@ -1,9 +1,9 @@
 package istat.android.base.interfaces;
 
 /**
- * Created by Istat Toukea on 23/08/2017.
+ * Created by istat on 04/04/18.
  */
 
-public interface Puller<OUT> {
-    OUT onPull();
+public interface Puller<Result, From> {
+    Result pull(From from);
 }

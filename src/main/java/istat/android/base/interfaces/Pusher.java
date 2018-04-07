@@ -1,9 +1,9 @@
 package istat.android.base.interfaces;
 
 /**
- * Created by Istat Toukea on 23/08/2017.
+ * Created by istat on 04/04/18.
  */
 
-public interface Pusher<INP, OUT> {
-    OUT onPush(INP input);
+public interface Pusher<Data, Destination, Result> {
+    Result push(Data data, Destination destination);
 }

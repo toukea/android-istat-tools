@@ -63,6 +63,10 @@ public class Preferences {
         save(key, String.valueOf(value));
     }
 
+    public void save(String key, boolean value) {
+        save(key, String.valueOf(value));
+    }
+
     public void save(String key, Object value) {
         Gson gson = new Gson();
         SavePreferences(this.context, this.file, key, gson.toJson(value), this.mode);

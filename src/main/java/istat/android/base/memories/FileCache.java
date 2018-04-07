@@ -78,7 +78,13 @@ public class FileCache implements Cache<File> {
     }
 
     public File getRootDir() {
-        createCacheDir();
+        return getRootDir(true);
+    }
+
+    public File getRootDir(boolean createIfNotExist) {
+        if (createIfNotExist) {
+            createCacheDir();
+        }
         return cacheDir;
     }
 
