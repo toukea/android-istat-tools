@@ -34,6 +34,7 @@ import android.app.ActivityManager.RunningAppProcessInfo;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -766,6 +767,20 @@ public final class ToolKits {
 
     public static final class IntentShortCuts {
         public IntentShortCuts() {
+        }
+
+        public static void startCropper(Activity context, Uri picUri, int code, Point dimens) throws ActivityNotFoundException {
+
+            Intent cropIntent = new Intent("com.android.camera.action.CROP");
+
+            cropIntent.setDataAndType(picUri, "image/*");
+            cropIntent.putExtra("crop", "true");
+            cropIntent.putExtra("aspectX", 1);
+            cropIntent.putExtra("aspectY", 1);
+            cropIntent.putExtra("outputX", dimens.x);
+            cropIntent.putExtra("outputY", dimens.y);
+            cropIntent.putExtra("return-data", true);
+            context.startActivityForResult(cropIntent, code);
         }
 
         public static final void enableGps(Context context) {
