@@ -69,7 +69,8 @@ public class Preferences {
 
     public void save(String key, Object value) {
         Gson gson = new Gson();
-        SavePreferences(this.context, this.file, key, gson.toJson(value), this.mode);
+        String savedValue = gson.toJson(value);
+        SavePreferences(this.context, this.file, key, savedValue, this.mode);
     }
 
     public <T> T load(String key, Class<T> cLass) {

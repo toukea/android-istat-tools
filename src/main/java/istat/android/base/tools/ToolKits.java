@@ -43,6 +43,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.Typeface;
@@ -770,16 +771,30 @@ public final class ToolKits {
         }
 
         public static void startCropper(Activity context, Uri picUri, int code, Point dimens) throws ActivityNotFoundException {
+            startCropper(context, picUri, code, null, dimens);
+        }
 
+        //https://play.google.com/store/search?q=image%20crop&c=apps&hl=fr
+        public static void startCropper(Activity context, Uri picUri, int code, Point aspect, Point dimens) throws ActivityNotFoundException {
+//            if (aspect == null) {
+//                aspect = new Point(1, 1);
+//            }
             Intent cropIntent = new Intent("com.android.camera.action.CROP");
 
             cropIntent.setDataAndType(picUri, "image/*");
             cropIntent.putExtra("crop", "true");
-            cropIntent.putExtra("aspectX", 1);
-            cropIntent.putExtra("aspectY", 1);
-            cropIntent.putExtra("outputX", dimens.x);
-            cropIntent.putExtra("outputY", dimens.y);
+            if (aspect != null) {
+                cropIntent.putExtra("aspectX", aspect.x);
+                cropIntent.putExtra("aspectY", aspect.y);
+            }
+            if (dimens != null) {
+                cropIntent.putExtra("outputX", dimens.x);
+                cropIntent.putExtra("outputY", dimens.y);
+            }
             cropIntent.putExtra("return-data", true);
+            cropIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+//            cropIntent.putExtra(MediaStore.EXTRA_OUTPUT, "/sdcard/Crop.jpg");
+//            cropIntent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
             context.startActivityForResult(cropIntent, code);
         }
 
