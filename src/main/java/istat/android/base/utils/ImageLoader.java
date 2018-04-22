@@ -22,6 +22,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -588,4 +589,49 @@ public class ImageLoader {
     public Cache<Bitmap> getMemoryCache() {
         return memoryCache;
     }
+
+//    public Cache< Bitmap> getCache() {
+//        return new Cache<Bitmap>() {
+//            @Override
+//            public Bitmap put(String key, Bitmap value) {
+//                return null;
+//            }
+//
+//            @Override
+//            public Bitmap remove(String filePath) {
+//                return null;
+//            }
+//
+//            @Override
+//            public boolean containsKey(String filePath) {
+//                return false;
+//            }
+//
+//            @Override
+//            public Bitmap get(String name) {
+//                return null;
+//            }
+//
+//            @Override
+//            public int size() {
+//                return 0;
+//            }
+//
+//            @Override
+//            public void clear() {
+//
+//            }
+//
+//            @Override
+//            public boolean isEmpty() {
+//                return false;
+//            }
+//
+//            @Override
+//            public Set<String> keySet() {
+//                return null;
+//            }
+//        };
+//    }
+
 }

@@ -770,12 +770,12 @@ public final class ToolKits {
         public IntentShortCuts() {
         }
 
-        public static void startCropper(Activity context, Uri picUri, int code, Point dimens) throws ActivityNotFoundException {
-            startCropper(context, picUri, code, null, dimens);
+        public static void startCropper(Activity context, Uri picUri, int code, Point dimens, Uri destination) throws ActivityNotFoundException {
+            startCropper(context, picUri, code, null, dimens,destination);
         }
 
         //https://play.google.com/store/search?q=image%20crop&c=apps&hl=fr
-        public static void startCropper(Activity context, Uri picUri, int code, Point aspect, Point dimens) throws ActivityNotFoundException {
+        public static void startCropper(Activity context, Uri picUri, int code, Point aspect, Point dimens, Uri destination) throws ActivityNotFoundException {
 //            if (aspect == null) {
 //                aspect = new Point(1, 1);
 //            }
@@ -793,8 +793,8 @@ public final class ToolKits {
             }
             cropIntent.putExtra("return-data", true);
             cropIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-//            cropIntent.putExtra(MediaStore.EXTRA_OUTPUT, "/sdcard/Crop.jpg");
-//            cropIntent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
+            cropIntent.putExtra(MediaStore.EXTRA_OUTPUT, destination);
+            cropIntent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
             context.startActivityForResult(cropIntent, code);
         }
 
