@@ -92,7 +92,8 @@ public class MemoryCache implements Cache<Bitmap> {
         if (TextUtils.isEmpty(entry)) {
             return null;
         }
-        return cache.remove(entry);
+        Bitmap removed = cache.remove(entry);
+        return removed;
     }
 
     @Override
