@@ -10,6 +10,8 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.PowerManager;
 
+import android.support.v7.app.NotificationCompat;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -19,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NoDoze {
     final static ConcurrentHashMap<Service, NoDoze> cache = new ConcurrentHashMap<>();
     Service service;
-    Notification.Builder notificationBuilder;
+    Notification notification;
     int notificationId;
     PowerManager powerManager;
     NotificationManager notificationManager;
@@ -28,7 +30,6 @@ public class NoDoze {
         public void onReceive(Context context, Intent intent) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (powerManager.isDeviceIdleMode()) {
-                    Notification notification = notificationBuilder.build();
                     service.startForeground(notificationId, notification);
                 } else {
                     service.stopForeground(false);
@@ -44,9 +45,8 @@ public class NoDoze {
         notificationManager = (NotificationManager) service.getSystemService(Context.NOTIFICATION_SERVICE);
     }
 
-    void begin(int id, Notification.Builder builder, boolean display) {
+    void begin(int id, Notification notification, boolean display) {
         this.notificationId = id;
-        this.notificationBuilder = builder;
         IntentFilter intentFilter = new IntentFilter(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED);
         service.registerReceiver(idleStateChangeStateBroadcastReceiver, intentFilter);
         if (display) {
@@ -66,24 +66,24 @@ public class NoDoze {
 
     public final static int DEFAULT_NOTIFICATION_ID = 100;
 
-    public final static boolean begin(Service service, Notification.Builder notificationBuilder) {
-        return begin(true, service, notificationBuilder, DEFAULT_NOTIFICATION_ID);
+    public final static boolean begin(Service service, Notification notification) {
+        return begin(true, service, notification, DEFAULT_NOTIFICATION_ID);
     }
 
-    public final static boolean begin(Service service, Notification.Builder notificationBuilder, int notificationId) {
-        return begin(true, service, notificationBuilder, notificationId);
+    public final static boolean begin(Service service, Notification notification, int notificationId) {
+        return begin(true, service, notification, notificationId);
     }
 
-    public final static boolean begin(boolean notify, Service service, Notification.Builder notificationBuilder) {
-        return begin(notify, service, notificationBuilder, DEFAULT_NOTIFICATION_ID);
+    public final static boolean begin(boolean notify, Service service, Notification notification) {
+        return begin(notify, service, notification, DEFAULT_NOTIFICATION_ID);
     }
 
-    public final static boolean begin(boolean notify, Service service, Notification.Builder notificationBuilder, int notificationId) {
+    public final static boolean begin(boolean notify, Service service, Notification notification, int notificationId) {
         if (cache.contains(service)) {
             return false;
         }
         NoDoze noDoze = new NoDoze(service);
-        noDoze.begin(notificationId, notificationBuilder, notify);
+        noDoze.begin(notificationId, notification, notify);
         cache.put(service, noDoze);
         return true;
     }
