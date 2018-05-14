@@ -40,6 +40,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
@@ -771,7 +772,7 @@ public final class ToolKits {
         }
 
         public static void startCropper(Activity context, Uri picUri, int code, Point dimens, Uri destination) throws ActivityNotFoundException {
-            startCropper(context, picUri, code, null, dimens,destination);
+            startCropper(context, picUri, code, null, dimens, destination);
         }
 
         //https://play.google.com/store/search?q=image%20crop&c=apps&hl=fr
@@ -1024,6 +1025,18 @@ public final class ToolKits {
                 return Settings.Secure.getInt(context.getContentResolver(), "install_non_market_apps") == 1;
             } catch (Exception var2) {
                 return false;
+            }
+        }
+
+        public static String getAppNameFromPkgName(Context context, String PackageName) {
+            try {
+                PackageManager packageManager = context.getPackageManager();
+                ApplicationInfo info = packageManager.getApplicationInfo(PackageName, PackageManager.GET_META_DATA);
+                String appName = (String) packageManager.getApplicationLabel(info);
+                return appName;
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+                return "";
             }
         }
 
