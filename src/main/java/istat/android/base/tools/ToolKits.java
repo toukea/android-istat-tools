@@ -345,7 +345,7 @@ public final class ToolKits {
                     public File decode(String s) throws Exception {
                         return new File(s);
                     }
-                }, ignores, extend);
+                }, null, ignores, extend);
             } catch (Exception e) {
                 e.printStackTrace();
                 return new ArrayList<>();
@@ -358,7 +358,7 @@ public final class ToolKits {
          */
 
         @SuppressLint("NewApi")
-        public static <T> List<T> findFileWithExtension(Context context, Decoder<T, String> decoder, String[] ignoredDir, String... extend) throws Exception {
+        public static <T> List<T> findFileWithExtension(Context context, Decoder<T, String> decoder, String sortOrder, String[] ignoredDir, String... extend) throws Exception {
             List<T> out = new ArrayList();
             if (extend == null || extend.length == 0)
                 return out;
@@ -404,7 +404,6 @@ public final class ToolKits {
             if (ignoredDir != null && ignoredDir.length > 0) {
                 argsList.addAll(Arrays.asList(ignoredDir));
             }
-            String sortOrder = null;
             Cursor allNonMediaFiles = cr.query(uri, projection, selection,
                     argsList.toArray(new String[argsList.size()]), sortOrder);
             if (allNonMediaFiles != null && allNonMediaFiles.getCount() > 0) {
@@ -420,8 +419,12 @@ public final class ToolKits {
             return out;
         }
 
-        @SuppressLint("NewApi")
         public static <T> List<T> findFiles(Context context, Decoder<T, String> decoder, String[] ignoredDir, String[] nameContent, String... extend) throws Exception {
+            return findFiles(context, decoder, null, ignoredDir, nameContent, extend);
+        }
+
+        @SuppressLint("NewApi")
+        public static <T> List<T> findFiles(Context context, Decoder<T, String> decoder, String sortOrder, String[] ignoredDir, String[] nameContent, String... extend) throws Exception {
             List<T> out = new ArrayList();
             if (extend == null || extend.length == 0)
                 return out;
@@ -486,7 +489,6 @@ public final class ToolKits {
             if (ignoredDir != null && ignoredDir.length > 0) {
                 argsList.addAll(Arrays.asList(ignoredDir));
             }
-            String sortOrder = null;
             Cursor allNonMediaFiles = cr.query(uri, projection, selection,
                     argsList.toArray(new String[argsList.size()]), sortOrder);
             if (allNonMediaFiles != null && allNonMediaFiles.getCount() > 0) {
@@ -718,6 +720,9 @@ public final class ToolKits {
         }
 
         public final static void showKeyboard(Context context) {
+            if (context == null) {
+                return;
+            }
             InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_NOT_ALWAYS);
         }
@@ -1283,7 +1288,7 @@ public final class ToolKits {
 
         public static final String toSentence(String word, String endingPunctuation) {
             word = beginByUpperCase(word.trim());
-            String regex = "(.*\\?)$|(.*\\.)$|(.*!)$|(.*:)$";
+            String regex = "(.*\\?)$|(.*\\.)$|(.*!)$|(.*:)$|(.*;)$|(.*,)$";
             boolean match = word.matches(regex);
             if (match) {
                 return word;

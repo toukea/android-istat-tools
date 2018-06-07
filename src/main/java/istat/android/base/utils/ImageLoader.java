@@ -65,8 +65,8 @@ public class ImageLoader {
     Bitmap progressionBitmapHolder, errorBitmapHolder;
     int imageQuality = QUALITY_HIGH;
     // Initialize MemoryCache
-    public static final MemoryCache DEFAULT_MEMORY_CACHE = new MemoryCache();
-    MemoryCache memoryCache = DEFAULT_MEMORY_CACHE;
+  //  public static final MemoryCache DEFAULT_MEMORY_CACHE = new MemoryCache();
+    MemoryCache memoryCache = new MemoryCache();//DEFAULT_MEMORY_CACHE;
     FileCache fileCache;
     Context context;
     // Create Map (collection) to store image and image url in key value pair
