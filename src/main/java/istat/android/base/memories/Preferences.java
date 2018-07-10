@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 
 import com.google.gson.Gson;
 
+import java.util.Map;
+
 import istat.android.base.tools.TextUtils;
 
 /**
@@ -143,6 +145,11 @@ public class Preferences {
         return this.mode;
     }
 
+    public Map<String, ?> getAll() {
+        SharedPreferences sharedPreferences = this.context.getSharedPreferences(this.file, this.mode);
+        return sharedPreferences.getAll();
+    }
+
     public SharedPreferences.Editor getEditor() {
         SharedPreferences sharedPreferences = this.context.getSharedPreferences(this.file, this.mode);
         return sharedPreferences.edit();
@@ -153,6 +160,7 @@ public class Preferences {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(key, value);
         editor.commit();
+        editor.apply();
     }
 
     public static String LoadPreferences(Context context, String File, String key, String deflt, int mode) {
@@ -162,5 +170,9 @@ public class Preferences {
 
     public static boolean contain(Context context, String File, String key) {
         return context.getSharedPreferences(File, 0).contains(key);
+    }
+
+    public int length() {
+        return getAll().size();
     }
 }

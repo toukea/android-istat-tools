@@ -374,7 +374,7 @@ public final class ToolKits {
                         selectionInclude += "OR " + MediaStore.Files.FileColumns.DATA
                                 + " LIKE ?";
                     }
-                    extend[i] = "%" + extend[i];
+                    extend[i] = "%" + (extend[i].startsWith(".") ? "" : ".") + extend[i];
                 }
             }
             String selectionIgnore = null;
@@ -446,13 +446,15 @@ public final class ToolKits {
             String selectionNameContent = null;
             if (nameContent.length >= 1) {
                 for (int i = 0; i < nameContent.length; i++) {
-                    if (selectionNameContent == null) {
-                        selectionNameContent = "LOWER(" + MediaStore.Files.FileColumns.DATA + ")" + " LIKE ?";
-                    } else {
-                        selectionNameContent += "AND LOWER(" + MediaStore.Files.FileColumns.DATA
-                                + ") LIKE ?";
+                    if (nameContent[i] != null && nameContent[i].length() > 0) {
+                        if (selectionNameContent == null) {
+                            selectionNameContent = "LOWER(" + MediaStore.Files.FileColumns.DATA + ")" + " LIKE ?";
+                        } else {
+                            selectionNameContent += "AND LOWER(" + MediaStore.Files.FileColumns.DATA
+                                    + ") LIKE ?";
+                        }
+                        nameContent[i] = "%" + nameContent[i].toLowerCase() + "%";
                     }
-                    nameContent[i] = "%" + nameContent[i].toLowerCase() + "%";
                 }
             }
             String selectionIgnore = null;

@@ -9,6 +9,7 @@ import android.os.PowerManager;
 
 public abstract class Worker extends BaseWorker {
     protected PowerManager.WakeLock powerWakeLock;
+    long startingTime;
 
     @Override
     public void onCreate() {
@@ -16,6 +17,11 @@ public abstract class Worker extends BaseWorker {
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         powerWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, this.getClass().getName());
         powerWakeLock.acquire();
+        this.startingTime = System.currentTimeMillis();
+    }
+
+    public long getStartingTime() {
+        return startingTime;
     }
 
     @Override
