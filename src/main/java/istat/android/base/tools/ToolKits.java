@@ -356,7 +356,7 @@ public final class ToolKits {
         OpenableColumns.DISPLAY_NAME);
     int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE
          */
-
+        //TODO remplacer le nom de cette methode avec findContentWithFileExtension
         @SuppressLint("NewApi")
         public static <T> List<T> findFileWithExtension(Context context, Decoder<T, String> decoder, String sortOrder, String[] ignoredDir, String... extend) throws Exception {
             List<T> out = new ArrayList();
@@ -718,6 +718,28 @@ public final class ToolKits {
                 return retValue instanceof Boolean ? Boolean.valueOf(retValue.toString()).booleanValue() : false;
             } catch (Exception var7) {
                 return false;
+            }
+        }
+
+        public Boolean isSoftKeyBoardVisible(Context context) {
+            InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm.isAcceptingText()) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        public final static boolean isKeyboardShown(Context context) {
+            return isKeyboardShown(context, null);
+        }
+
+        public final static boolean isKeyboardShown(Context context, View view) {
+            InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (view != null) {
+                return imm.isActive(view);
+            } else {
+                return imm.isActive();
             }
         }
 
@@ -1299,21 +1321,29 @@ public final class ToolKits {
         }
 
         public static final String beginByUpperCase(String word) {
-            if (word.length() > 1) {
-                String begin = word.substring(0, 1).toUpperCase(Locale.getDefault());
-                word = begin + word.substring(1);
+            try {
+                if (word.length() > 1) {
+                    String begin = word.substring(0, 1).toUpperCase(Locale.getDefault());
+                    word = begin + word.substring(1);
+                }
+                return word;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return word;
             }
-
-            return word;
         }
 
         public static final String beginByLowerCase(String word) {
-            if (word.length() > 1) {
-                String begin = word.substring(0, 1).toLowerCase(Locale.getDefault());
-                word = begin + word.substring(1);
+            try {
+                if (word.length() > 1) {
+                    String begin = word.substring(0, 1).toLowerCase(Locale.getDefault());
+                    word = begin + word.substring(1);
+                }
+                return word;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return word;
             }
-
-            return word;
         }
 
         public static final int parseInt(Object obj) {
