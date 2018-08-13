@@ -630,6 +630,15 @@ public final class ToolKits {
             }
         }
 
+        public static final boolean delete(File file) {
+            if (file.isDirectory()) {
+                int deleted = deleteDirectory(file);
+                return deleted > 0;
+            } else {
+                return file.delete();
+            }
+        }
+
         public static final int deleteDirectory(File directory) {
             int deleted = 0;
             File[] files = directory.listFiles();
