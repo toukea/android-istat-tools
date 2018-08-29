@@ -1108,6 +1108,9 @@ public final class ToolKits {
 
                 String line;
                 while ((line = e.readLine()) != null) {
+                    if (!istat.android.base.tools.TextUtils.isEmpty(total.toString())) {
+                        total.append("\n");
+                    }
                     total.append(line);
                 }
 
