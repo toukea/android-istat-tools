@@ -1393,24 +1393,24 @@ public final class ToolKits {
             return word.equals("-1") ? "---" : (d > 1500 ? d / 1000 + "Km" : d + "m");
         }
 
-        public static final float getpercentNumericValue(int progresstate, int STEP, boolean comma) {
+        public static final float getPercentNumericValue(int progresstate, int STEP, boolean comma) {
             return comma ? (float) progresstate * 100.0F / (float) STEP : (float) ((int) ((float) progresstate * 100.0F / (float) STEP));
         }
 
-        public static final String getpercentValue(int progresstate, int STEP, boolean comma) {
+        public static final String getPercentValue(int progresstate, int STEP, boolean comma) {
             return comma ? (float) progresstate * 100.0F / (float) STEP + "%" : (int) ((float) progresstate * 100.0F / (float) STEP) + "%";
         }
 
-        public static final String getpercentValue(int progresstate, int STEP) {
-            return (float) progresstate * 100.0F / (float) STEP + "%";
+        public static final String getPercentValue(int progressState, int STEP) {
+            return (float) progressState * 100.0F / (float) STEP + "%";
         }
 
-        public static final float getpercentNumericValue(int progresstate, int STEP) {
-            return (float) progresstate * 100.0F / (float) STEP;
+        public static final float getPercentNumericValue(int progressState, int STEP) {
+            return (float) progressState * 100.0F / (float) STEP;
         }
 
         public static final String sweetNumber(int a) {
-            return a > 9 ? "" + a : "0" + a;
+            return a > 9 || a < 0 ? "" + a : "0" + a;
         }
 
         public static final String adjustNumber(float a) {
