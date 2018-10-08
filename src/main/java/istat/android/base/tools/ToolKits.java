@@ -55,7 +55,6 @@ import android.net.Uri;
 import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.provider.Settings;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.Display;
 import android.view.View;
