@@ -138,6 +138,7 @@ public class Reflections {
         List<Field> fields = getAllFieldFields(object.getClass(), true, false);
         for (int i = 0; i < fields.size(); i++) {
             Field field = fields.get(i);
+            field.setAccessible(true);
             map.put(prefix + field.getName(), field.get(object));
         }
         return map;
