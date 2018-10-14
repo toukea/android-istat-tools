@@ -1,6 +1,7 @@
 package istat.android.base.memories;
 
 
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -58,14 +59,6 @@ public class MemoryCache implements Cache<Bitmap> {
         Log.i(TAG, "MemoryCache will use up to " + limit / 1024. / 1024. + "MB");
     }
 
-    public boolean containkey(String id) {
-        String entry = this.entryGenerator.onGenerateEntry(id);
-        if (TextUtils.isEmpty(entry)) {
-            return false;
-        }
-        return cache.containsKey(entry);
-    }
-
     public Bitmap get(String id) {
         String entry = this.entryGenerator.onGenerateEntry(id);
         if (TextUtils.isEmpty(entry)) {
@@ -96,9 +89,41 @@ public class MemoryCache implements Cache<Bitmap> {
         return removed;
     }
 
+    public void freeMemory() {
+        System.runFinalization();
+        Runtime.getRuntime().gc();
+        System.gc();
+    }
+
+    //TODO implementer la même gestion du cache que celle du Drive.
+//    public Map<String, WeakReference<Bitmap>> getBundle() {
+//        return cache;
+//    }
+//
+    public void purge() {
+//        try {
+//            Bitmap currentBitmap;
+//            for (WeakReference<Bitmap> bitRef : getBundle().values()) {
+//                currentBitmap = bitRef.get();
+//                if (currentBitmap != null) {
+//                    currentBitmap.recycle();
+//                }
+//            }
+//            cache.clear();
+//            size = 0;
+//            freeMemory();
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//        }
+    }
+
     @Override
     public boolean containsKey(String filePath) {
-        return false;
+        String entry = this.entryGenerator.onGenerateEntry(filePath);
+        if (TextUtils.isEmpty(entry)) {
+            return false;
+        }
+        return cache.containsKey(entry);
     }
 
     public Bitmap put(String id, Bitmap bitmap) {

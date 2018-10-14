@@ -65,7 +65,7 @@ public class ImageLoader {
     Bitmap progressionBitmapHolder, errorBitmapHolder;
     int imageQuality = QUALITY_HIGH;
     // Initialize MemoryCache
-  //  public static final MemoryCache DEFAULT_MEMORY_CACHE = new MemoryCache();
+    //  public static final MemoryCache DEFAULT_MEMORY_CACHE = new MemoryCache();
     MemoryCache memoryCache = new MemoryCache();//DEFAULT_MEMORY_CACHE;
     FileCache fileCache;
     Context context;
@@ -466,13 +466,26 @@ public class ImageLoader {
         return null;
     }
 
+//    boolean imageViewReused(PhotoToLoad photoToLoad) {
+//
+//        String tag = imageViews.get(photoToLoad.imageView);
+//        // Check url is already exist in imageViews MAP
+//        if (tag == null || !tag.equals(photoToLoad.url))
+//            return true;
+//        return false;
+//    }
+    /*
+    Pris dans le code di Drive preferentiellement a l'existant.
+     */
     boolean imageViewReused(PhotoToLoad photoToLoad) {
 
         String tag = imageViews.get(photoToLoad.imageView);
         // Check url is already exist in imageViews MAP
-        if (tag == null || !tag.equals(photoToLoad.url))
-            return true;
-        return false;
+        if (tag == null || tag.equals(photoToLoad.url))
+            return false;
+//        if (tag == null || !tag.equals(photoToLoad.url))
+//            return true;
+        return true;
     }
 
     // Used to display bitmap in the UI thread
@@ -498,15 +511,51 @@ public class ImageLoader {
 
     public void clearCache() {
         // Clear cache directory downloaded images and stored data in maps
-        memoryCache.clear();
-        if (fileCache != null) {
-            fileCache.clear();
-        }
+        clearMemoryCache();
+        fileCache.clear();
     }
 
     public void clearMemoryCache() {
+        imageViews.clear();
         memoryCache.clear();
     }
+
+    public void purgeMemory() {
+        imageViews.clear();
+        memoryCache.purge();
+        if (errorBitmapHolder != null) {
+            errorBitmapHolder = null;
+        }
+        if (progressionBitmapHolder != null) {
+            progressionBitmapHolder = null;
+        }
+    }
+
+    public void cancel() {
+        cancel(true);
+    }
+
+    //TODO implementer la même gestion des Executor que sur le Drive.
+    public void stop() {
+        if (executorService != null) {
+            executorService.shutdownNow();
+//            executorService = Executors.newFixedThreadPool(SIZE_POOL_THREAD_REMOTE);
+        }
+//        if (executorServiceLocalStorage != null) {
+//            executorServiceLocalStorage.shutdownNow();
+//            executorServiceLocalStorage = Executors.newFixedThreadPool(SIZE_POOL_THREAD_LOCAL);
+//        }
+    }
+
+    public void cancel(boolean purge) {
+        stop();
+        if (purge) {
+            //TODO il serait meilleurs d'utiliser un purge, mais le purge entraine des instabilité.
+            // purgeMemory();
+            clearMemoryCache();
+        }
+    }
+
 
     public void clearFileCache() {
         if (fileCache != null) {
@@ -588,6 +637,37 @@ public class ImageLoader {
 
     public Cache<Bitmap> getMemoryCache() {
         return memoryCache;
+    }
+
+    public boolean isMemoryCached(String tag) {
+        return memoryCache.containsKey(tag);
+    }
+
+    public boolean isFileCached(String tag) {
+        File file = fileCache.getFile(tag);
+        if (file == null) {
+            return false;
+        }
+        return file.exists();
+    }
+
+    public boolean isCached(String tag) {
+        return isMemoryCached(tag) || isFileCached(tag);
+    }
+
+    public synchronized Bitmap getCachedBitmap(String url) {
+        if (memoryCache.containsKey(url)) {
+            return memoryCache.get(url);
+        }
+        File file = fileCache.getFile(url);
+        if (file == null) {
+            return null;
+        }
+        boolean fileExist = file.exists();
+        if (!fileExist) {
+            return null;
+        }
+        return getBitmapFromPath(file.getAbsolutePath());
     }
 
 //    public Cache< Bitmap> getCache() {
