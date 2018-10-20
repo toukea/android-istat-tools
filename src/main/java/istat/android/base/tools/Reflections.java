@@ -143,4 +143,24 @@ public class Reflections {
         }
         return map;
     }
+
+    public static <T> boolean equals(T object, T object2, String... fieldNames) throws NoSuchFieldException, IllegalAccessException {
+        if (object == object2) {
+            return true;
+        } else if (object == null || object2 == null) {
+            return false;
+        }
+        Field field;
+        Class cLass = object.getClass();
+        for (String fieldName : fieldNames) {
+            field = cLass.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            Object value = field.get(object);
+            Object value2 = field.get(object2);
+            if (value != value2 && !ToolKits.Word.parseString(value).equals(ToolKits.Word.parseString(value2))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
