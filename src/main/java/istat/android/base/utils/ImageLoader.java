@@ -59,7 +59,8 @@ import static istat.android.base.tools.Bitmaps.getBitmapFromPath;
 public class ImageLoader {
     public final static String TAG = "ImageLoader";
     //TODO implementer un ImageRender|Handler qui manipule l'image avant l'affichage
-    public static int QUALITY_HIGH = -1, QUALITY_LOW = 85;
+    //TODO permettre de supporté la QUATLITY_AUTO qui resize auto l'image a la taille de La vue.
+    public static int QUALITY_AUTO = -2, QUALITY_HIGH = -1, QUALITY_LOW = 85;
     final static int DEFAULT_PICTURE_ON_PROGRESS = android.R.drawable.ic_dialog_info,
             DEFAULT_PICTURE_ON_ERROR = android.R.drawable.ic_dialog_alert;
     Bitmap progressionBitmapHolder, errorBitmapHolder;
@@ -230,7 +231,7 @@ public class ImageLoader {
                 if (imageViewReused(photoToLoad))
                     return;
                 // download image create web url
-                Bitmap bmp = getBitmap(photoToLoad.url, mResourceConnectionHandler);
+                Bitmap bmp = getBitmap(photoToLoad, mResourceConnectionHandler);
 
                 // set image data in Memory Cache
 
@@ -312,11 +313,23 @@ public class ImageLoader {
     }
 
     //TODO cette methode essayer de voir comment délégué a une autre méthode getBitmap
-    private Bitmap getBitmap(final String url, final ResourceConnectionHandler resourceConnectionHandler) throws IOException {
+    private Bitmap getBitmap(PhotoToLoad photosLoad, final ResourceConnectionHandler resourceConnectionHandler) throws IOException {
+        String url = photosLoad.url;
         if (ToolKits.WordFormat.isInteger(url))
             return Bitmaps.getBitmapFromResource(getContext(),
                     Integer.valueOf(url));
-        return getBitmap(url, useFileCache ? fileCache : null, useMemoryCache ? memoryCache : null, imageQuality, resourceConnectionHandler);
+        int quality = imageQuality;
+        if (quality == QUALITY_AUTO && photosLoad.imageView != null) {
+            quality = photosLoad.imageView.getHeight() >= photosLoad.imageView.getWidth() ?
+                    photosLoad.imageView.getHeight() :
+                    photosLoad.imageView.getWidth();
+            if (quality == 0) {
+                quality = QUALITY_HIGH;
+            } else if (quality <= QUALITY_LOW) {
+                quality = QUALITY_LOW;
+            }
+        }
+        return getBitmap(url, useFileCache ? fileCache : null, useMemoryCache ? memoryCache : null, quality, resourceConnectionHandler);
     }
 
     public static Bitmap getBitmap(String url, FileCache cache, MemoryCache memoryCache, int quality, final ResourceConnectionHandler resourceConnectionHandler) throws IOException {
@@ -327,7 +340,7 @@ public class ImageLoader {
 
         if (cachedFile != null && cachedFile.exists()) {
             Bitmap b;
-            if (quality == QUALITY_HIGH) {
+            if (quality <= QUALITY_HIGH) {
                 b = getBitmapFromPath(cachedFile.getAbsolutePath());
             } else {
                 b = decodeFile(cachedFile, quality);
@@ -347,7 +360,7 @@ public class ImageLoader {
                 ToolKits.Stream.copyStream(is, os);
                 os.close();
                 resourceConnectionHandler.onDisconnect(url, is);
-                if (quality == QUALITY_HIGH) {
+                if (quality <= QUALITY_HIGH) {
                     bitmap = getBitmapFromPath(cachedFile.getAbsolutePath());
                 } else {
                     bitmap = decodeFile(cachedFile, quality);
@@ -357,7 +370,7 @@ public class ImageLoader {
                 ToolKits.Stream.copyStream(is, os);
                 byte[] bytes = os.toByteArray();
                 resourceConnectionHandler.onDisconnect(url, is);
-                if (quality == QUALITY_HIGH) {
+                if (quality <= QUALITY_HIGH) {
                     bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                 } else {
                     bitmap = decodeByte(bytes, quality);
@@ -466,7 +479,7 @@ public class ImageLoader {
         return null;
     }
 
-//    boolean imageViewReused(PhotoToLoad photoToLoad) {
+    //    boolean imageViewReused(PhotoToLoad photoToLoad) {
 //
 //        String tag = imageViews.get(photoToLoad.imageView);
 //        // Check url is already exist in imageViews MAP
