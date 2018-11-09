@@ -24,6 +24,7 @@ public class SoftKeyboardStateWatcher {
                     // visible
                     if (listener != null) listener.onKeyboardStateChanged(STATE_VISIBLE);
                 } else if ((lastVisibleDecorViewHeight < visibleDecorViewHeight) && (visibleDecorViewHeight / lastVisibleDecorViewHeight >= 0.3f)) {
+                    //TODO sur le phone de PASCAL, il semblerai que cet event ne soit pas correctement lancé.
                     // hidden
                     if (listener != null) listener.onKeyboardStateChanged(STATE_HIDDEN);
                 }
@@ -47,10 +48,14 @@ public class SoftKeyboardStateWatcher {
 
     boolean watching = false;
 
-    public void startWatching(OnKeyboardStateChangedListener listener) {
+    public boolean startWatching(OnKeyboardStateChangedListener listener) {
+        if (isWatching()) {
+            return false;
+        }
         this.listener = listener;
         initKeyboardListener();
         this.watching = true;
+        return true;
     }
 
     public boolean isWatching() {

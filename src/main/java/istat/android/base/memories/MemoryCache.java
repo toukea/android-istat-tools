@@ -45,6 +45,7 @@ public class MemoryCache implements Cache<Bitmap> {
     private long size = 0;
 
     //max memory cache folder used to download images in bytes
+    //TODO afin de permettre des comportement dynamique mettre un callable a la place.
     private long limit = 4000000;
 
     public MemoryCache() {
@@ -144,15 +145,19 @@ public class MemoryCache implements Cache<Bitmap> {
         }
     }
 
+    public long getLimit() {
+        return limit;
+    }
+
     private void checkSize() {
         Log.i(TAG, "cache size=" + size + " length=" + cache.size());
-        if (size > limit) {
+        if (size > getLimit()) {
             Iterator<Entry<String, Bitmap>> iter = cache.entrySet().iterator();//least recently accessed item will be the first one iterated
             while (iter.hasNext()) {
                 Entry<String, Bitmap> entry = iter.next();
                 size -= getSizeInBytes(entry.getValue());
                 iter.remove();
-                if (size <= limit)
+                if (size <= getLimit())
                     break;
             }
             Log.i(TAG, "Clean cache. New size " + cache.size());

@@ -169,22 +169,22 @@ public class ImageLoader {
         displayImage(path, imageView, null);
     }
 
-    public void displayImage(String path, ImageView imageView, LoadCallback mLoadListener) {
+    public void displayImage(String path, ImageView imageView, LoadCallback loadCallback) {
         // Store image and url in Map
         imageViews.put(imageView, path);
 
         // Check image is stored in MemoryCache Map or not (see
         // MemoryCache.java)
-        Bitmap bitmap = memoryCache.get(path);
+        Bitmap bitmap = isUseMemoryCache() ? memoryCache.get(path) : null;
         PhotoToLoad photoToLoad = new PhotoToLoad(path, imageView);
-        notifyImageLoad(photoToLoad, mLoadListener);
+        notifyImageLoad(photoToLoad, loadCallback);
         if (bitmap != null) {
             // if image is stored in MemoryCache Map then
             // Show image in listview row
-            notifyImageLoaded(photoToLoad, mLoadListener, bitmap);
+            notifyImageLoaded(photoToLoad, loadCallback, bitmap);
         } else {
             // queue Photo to download create url
-            queuePhoto(path, imageView, mLoadListener);
+            queuePhoto(path, imageView, loadCallback);
         }
     }
 
@@ -312,7 +312,7 @@ public class ImageLoader {
         void onDisconnect(String url, InputStream inputStream) throws IOException;
     }
 
-    //TODO cette methode essayer de voir comment délégué a une autre méthode getBitmap
+    //TODO Essayer de voir comment délégué a une autre méthode getBitmap
     private Bitmap getBitmap(PhotoToLoad photosLoad, final ResourceConnectionHandler resourceConnectionHandler) throws IOException {
         String url = photosLoad.url;
         if (ToolKits.WordFormat.isInteger(url))
@@ -669,7 +669,7 @@ public class ImageLoader {
     }
 
     public synchronized Bitmap getCachedBitmap(String url) {
-        if (memoryCache.containsKey(url)) {
+        if (isUseMemoryCache() && memoryCache.containsKey(url)) {
             return memoryCache.get(url);
         }
         File file = fileCache.getFile(url);
