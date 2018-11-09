@@ -20,10 +20,10 @@ public class SoftKeyboardStateWatcher {
             final int visibleDecorViewHeight = windowVisibleDisplayFrame.height();
 
             if (lastVisibleDecorViewHeight != 0) {
-                if ((lastVisibleDecorViewHeight > visibleDecorViewHeight) && (lastVisibleDecorViewHeight / visibleDecorViewHeight >= 0.3f)) {
+                if ((lastVisibleDecorViewHeight > visibleDecorViewHeight) && ((float) (lastVisibleDecorViewHeight / visibleDecorViewHeight) >= 0.3f)) {
                     // visible
                     if (listener != null) listener.onKeyboardStateChanged(STATE_VISIBLE);
-                } else if ((lastVisibleDecorViewHeight < visibleDecorViewHeight) && (visibleDecorViewHeight / lastVisibleDecorViewHeight >= 0.3f)) {
+                } else if ((lastVisibleDecorViewHeight < visibleDecorViewHeight) && ((float) (visibleDecorViewHeight / lastVisibleDecorViewHeight) >= 0.3f)) {
                     //TODO sur le phone de PASCAL, il semblerai que cet event ne soit pas correctement lancé.
                     // hidden
                     if (listener != null) listener.onKeyboardStateChanged(STATE_HIDDEN);
@@ -42,14 +42,13 @@ public class SoftKeyboardStateWatcher {
     }
 
     private void initKeyboardListener() {
-        watchView.getViewTreeObserver().addOnGlobalLayoutListener(
-                mOnGlobalLayoutListener);
+        watchView.getViewTreeObserver().addOnGlobalLayoutListener(mOnGlobalLayoutListener);
     }
 
     boolean watching = false;
 
-    public boolean startWatching(OnKeyboardStateChangedListener listener) {
-        if (isWatching()) {
+    public synchronized  boolean startWatching(OnKeyboardStateChangedListener listener) {
+        if (isWatching() || listener == this.listener) {
             return false;
         }
         this.listener = listener;
@@ -62,7 +61,8 @@ public class SoftKeyboardStateWatcher {
         return watching;
     }
 
-    public boolean stopWatching() {
+    public synchronized boolean stopWatching() {
+        this.listener = null;
         if (this.watching && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             watchView.getViewTreeObserver().removeOnGlobalLayoutListener(mOnGlobalLayoutListener);
             this.watching = false;
