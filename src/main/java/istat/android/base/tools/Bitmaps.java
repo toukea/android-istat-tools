@@ -170,8 +170,8 @@ public class Bitmaps {
         paint.setDither(true);
         canvas.drawARGB(0, 0, 0, 0);
         paint.setColor(Color.parseColor(color));
-        canvas.drawCircle(radius / 2 + 0.7f, radius / 2 + 0.7f,
-                radius / 2 - 0.9f, paint);
+        canvas.drawCircle(radius / 2, radius / 2,
+                radius / 2, paint);
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
         canvas.drawBitmap(sbmp, rect, rect, paint);
 

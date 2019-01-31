@@ -14,27 +14,27 @@ import android.util.Base64;
 
 /**
  * Usage:
- * 
+ *
  * <pre>
  * String crypto = SimpleCrypto.encrypt(masterpassword, cleartext)
  * ...
  * String cleartext = SimpleCrypto.decrypt(masterpassword, crypto)
  * </pre>
- * 
+ *
  * @author ferenc.hechler
  */
 public class SimpleCrypto {
 
 	public static String encrypt(String seed, String cleartext)
 			throws Exception {
-		byte[] rawKey = getRawKey(seed.getBytes());
-		byte[] result = encrypt(rawKey, cleartext.getBytes());
+		byte[] rawKey = getRawKey(seed.getBytes("UTF-8"));
+		byte[] result = encrypt(rawKey, cleartext.getBytes("UTF-8"));
 		return toHex(result);
 	}
 
 	public static String decrypt(String seed, String encrypted)
 			throws Exception {
-		byte[] rawKey = getRawKey(seed.getBytes());
+		byte[] rawKey = getRawKey(seed.getBytes("UTF-8"));
 		byte[] enc = toByte(encrypted);
 		byte[] result = decrypt(rawKey, enc);
 		return new String(result);
@@ -61,14 +61,14 @@ public class SimpleCrypto {
 	private static byte[] decrypt(byte[] raw, byte[] encrypted)
 			throws Exception {
 		SecretKeySpec skeySpec = new SecretKeySpec(raw, "AES");
-		Cipher cipher = Cipher.getInstance("AES");
+		Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
 		cipher.init(Cipher.DECRYPT_MODE, skeySpec);
 		byte[] decrypted = cipher.doFinal(encrypted);
 		return decrypted;
 	}
 
-	public static String toHex(String txt) {
-		return toHex(txt.getBytes());
+	public static String toHex(String txt) throws UnsupportedEncodingException {
+		return toHex(txt.getBytes("UTF-8"));
 	}
 
 	public static String fromHex(String hex) {

@@ -9,6 +9,10 @@ public class TextUtils {
         return s == null || s.length() == 0;
     }
 
+    public static boolean isEmpty(Object o) {
+        return o == null || o.toString().length() == 0;
+    }
+
     private static int countLines(String str) {
         String[] lines = str.split("\r\n|\r|\n");
         return lines.length;

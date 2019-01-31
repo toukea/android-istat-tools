@@ -1137,7 +1137,7 @@ public final class ToolKits {
             return out;
         }
 
-        public static final void InputToOutput(String add, InputStream in, OutputStream out) throws Exception {
+        public static final void inputToOutput(String add, InputStream in, OutputStream out) throws Exception {
             byte[] b = new byte[8352];
             boolean read = false;
             byte[] tb = add.getBytes();

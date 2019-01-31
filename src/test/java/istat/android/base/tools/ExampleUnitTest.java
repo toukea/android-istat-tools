@@ -3,6 +3,10 @@ package istat.android.base.tools;
 
 import org.junit.Test;
 
+import java.security.Provider;
+import java.security.Security;
+
+import istat.android.base.security.SimpleCrypto;
 import istat.android.base.utils.AbsListWrapper;
 
 import static org.junit.Assert.*;
@@ -13,6 +17,25 @@ import static org.junit.Assert.*;
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
 public class ExampleUnitTest {
+
+    @Test
+    public void encryptTest() throws Exception {
+        String password = "hellompkolkiopml";
+        String wordToEncrypt = "bonjour mama comment vas tu? bisous";
+        String cryptat = SimpleCrypto.encrypt(password, wordToEncrypt);
+        String decode = SimpleCrypto.decrypt(password, cryptat);
+        assertEquals(decode, wordToEncrypt);
+
+    }
+
+    @Test
+    public void listProviders() throws Exception {
+        Provider[] providers = Security.getProviders();
+        for (Provider p : providers) {
+            System.out.println("provider: " + p.getName()+", "+p);
+        }
+    }
+
     @Test
     public void addition_isCorrect() throws Exception {
         assertEquals(4, 2 + 2);

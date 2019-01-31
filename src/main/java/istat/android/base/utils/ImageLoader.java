@@ -117,6 +117,7 @@ public class ImageLoader {
         this.imageQuality = imageQuality;
     }
 
+    //TODO essayer d'éviter les OutOfMemory au chargement de des icon INT
     public void setErrorIcon(int icon) {
         if (icon == 0) {
             errorBitmapHolder = null;
@@ -549,15 +550,27 @@ public class ImageLoader {
     }
 
     //TODO implementer la même gestion des Executor que sur le Drive.
-    public void stop() {
-        if (executorService != null) {
-            executorService.shutdownNow();
-//            executorService = Executors.newFixedThreadPool(SIZE_POOL_THREAD_REMOTE);
-        }
-//        if (executorServiceLocalStorage != null) {
-//            executorServiceLocalStorage.shutdownNow();
-//            executorServiceLocalStorage = Executors.newFixedThreadPool(SIZE_POOL_THREAD_LOCAL);
+//    public void stop() {
+//        if (executorService != null) {
+//            executorService.shutdownNow();
+////            executorService = Executors.newFixedThreadPool(SIZE_POOL_THREAD_REMOTE);
 //        }
+////        if (executorServiceLocalStorage != null) {
+////            executorServiceLocalStorage.shutdownNow();
+////            executorServiceLocalStorage = Executors.newFixedThreadPool(SIZE_POOL_THREAD_LOCAL);
+////        }
+//    }
+
+    public boolean stop() {
+        try {
+            if (executorService != null) {
+                return !executorService.shutdownNow().isEmpty();
+            }
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public void cancel(boolean purge) {
@@ -672,7 +685,7 @@ public class ImageLoader {
         if (isUseMemoryCache() && memoryCache.containsKey(url)) {
             return memoryCache.get(url);
         }
-        File file = fileCache.getFile(url);
+        File file = fileCache.get(url);
         if (file == null) {
             return null;
         }

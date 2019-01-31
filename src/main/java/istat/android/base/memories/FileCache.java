@@ -264,7 +264,11 @@ public class FileCache implements Cache<File> {
 
     @Override
     public File get(String name) {
-        return null;
+        String fileName = entryGenerator != null ? entryGenerator.onGenerateEntry(name) : name;
+        if (TextUtils.isEmpty(fileName)) {
+            return null;
+        }
+        return new File(getRootDir(), fileName);
     }
 
     @Override
