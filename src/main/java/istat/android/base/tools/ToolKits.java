@@ -271,12 +271,12 @@ public final class ToolKits {
             return alert;
         }
 
-        public static final Dialog displayExitDialog(final Context context, int... args) {
+        public static final Dialog displayExitDialog(final Activity context, int... args) {
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             builder.setTitle(args[0]).setMessage(args[1]).setCancelable(false).setPositiveButton(args[2], new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
                     dialog.cancel();
-                    ((Activity) context).finish();
+                    context.finish();
                 }
             }).setNegativeButton(args[3], new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
@@ -284,7 +284,9 @@ public final class ToolKits {
                 }
             });
             AlertDialog alert = builder.create();
-            alert.show();
+            if (!context.isFinishing()) {
+                alert.show();
+            }
             return alert;
         }
     }
@@ -1383,7 +1385,8 @@ public final class ToolKits {
             return !locale.equals(Locale.FRANCE) && !locale.equals(Locale.FRENCH) ? EnglishWordToNumber.replaceNumbers(word) : EnglishWordToNumber.replaceNumbers(word);
         }
 
-        public static final String shortWord(String word, int max) {
+        public static final String shortWord(CharSequence charSequence, int max) {
+            String word = charSequence.toString();
             return word.length() <= max ? word : word.substring(0, max) + "...";
         }
 

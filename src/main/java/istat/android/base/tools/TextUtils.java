@@ -17,4 +17,8 @@ public class TextUtils {
         String[] lines = str.split("\r\n|\r|\n");
         return lines.length;
     }
+
+    public static String linearize(String text) {
+        return text.replaceAll("\n", " ");
+    }
 }
