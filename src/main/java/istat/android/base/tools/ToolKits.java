@@ -57,6 +57,7 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Display;
+import android.view.Surface;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
@@ -993,6 +994,28 @@ public final class ToolKits {
             Display display = context.getWindow().getWindowManager().getDefaultDisplay();
             return new Point(display.getWidth(), display.getHeight());
         }
+
+        public final static boolean isLandScape(Activity context) {
+            int orientation = context.getWindowManager().getDefaultDisplay()
+                    .getRotation();
+            if (orientation == Surface.ROTATION_90
+                    || orientation == Surface.ROTATION_270) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        public final static boolean isPortrait(Activity context) {
+            int orientation = context.getWindowManager().getDefaultDisplay()
+                    .getRotation();
+            if (orientation == Surface.ROTATION_90
+                    || orientation == Surface.ROTATION_270) {
+                return false;
+            } else {
+                return true;
+            }
+        }
     }
 
     public static final class Software {
@@ -1324,7 +1347,10 @@ public final class ToolKits {
         }
 
         public static final String toSentence(String word, String endingPunctuation) {
-            word = beginByUpperCase(word.trim());
+            if (TextUtils.isEmpty(word)) {
+                return word;
+            }
+            word = beginByUpperCase(TextUtils.trim(word));
             String regex = "(.*\\?)$|(.*\\.)$|(.*!)$|(.*:)$|(.*;)$|(.*,)$";
             boolean match = word.matches(regex);
             if (match) {

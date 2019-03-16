@@ -16,7 +16,7 @@ public interface Cache<T> {
 
     int size();
 
-    void clear();
+    int clear();
 
     boolean isEmpty();
 

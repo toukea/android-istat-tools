@@ -140,15 +140,20 @@ public class FileCache implements Cache<File> {
         }
     }
 
-    public void clear() {
+    public int clear() {
         createCacheDir();
         // list all files inside cache directory
         File[] files = cacheDir.listFiles();
         if (files == null)
-            return;
+            return 0;
+        int count = 0;
         // delete all cache directory files
-        for (File f : files)
-            f.delete();
+        for (File f : files) {
+            if (f.delete()) {
+                count++;
+            }
+        }
+        return count;
     }
 
     public FileCache setDirName(String dirname) {

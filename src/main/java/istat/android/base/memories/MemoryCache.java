@@ -1,10 +1,12 @@
 package istat.android.base.memories;
 
 
-import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -37,7 +39,7 @@ import istat.android.base.tools.TextUtils;
 public class MemoryCache implements Cache<Bitmap> {
 
     private static final String TAG = "MemoryCache";
-
+    private static final Map<String, List<String>> entryNames = Collections.synchronizedMap(new HashMap<String, List<String>>());
     //Last argument true for LRU ordering
     private static final Map<String, Bitmap> cache = Collections.synchronizedMap(new LinkedHashMap<String, Bitmap>(10, 1.5f, true));
 
@@ -46,7 +48,7 @@ public class MemoryCache implements Cache<Bitmap> {
 
     //max memory cache folder used to download images in bytes
     //TODO afin de permettre des comportement dynamique mettre un callable a la place.
-    private long limit = 4000000;
+    private static long limit = 4000000;
 
     public MemoryCache() {
 
@@ -54,7 +56,8 @@ public class MemoryCache implements Cache<Bitmap> {
         setLimit(Runtime.getRuntime().maxMemory() / 4);
     }
 
-    public void setLimit(long new_limit) {
+    //TODO devrait être static et general a toute la class
+    public static void setLimit(long new_limit) {
 
         limit = new_limit;
         Log.i(TAG, "MemoryCache will use up to " + limit / 1024. / 1024. + "MB");
@@ -87,6 +90,7 @@ public class MemoryCache implements Cache<Bitmap> {
             return null;
         }
         Bitmap removed = cache.remove(entry);
+        removeGeneratedEntryName(entry);
         return removed;
     }
 
@@ -123,7 +127,7 @@ public class MemoryCache implements Cache<Bitmap> {
         String entry = this.entryGenerator.onGenerateEntry(filePath);
         if (TextUtils.isEmpty(entry)) {
             return false;
-        }
+        }//doit t'on pluto cherché dans
         return cache.containsKey(entry);
     }
 
@@ -136,6 +140,7 @@ public class MemoryCache implements Cache<Bitmap> {
             if (cache.containsKey(entry))
                 size -= getSizeInBytes(cache.get(entry));
             Bitmap bitmap1 = cache.put(entry, bitmap);
+            addGeneratedEntryName(entry);
             size += getSizeInBytes(bitmap);
             checkSize();
             return bitmap1;
@@ -145,7 +150,30 @@ public class MemoryCache implements Cache<Bitmap> {
         }
     }
 
-    public long getLimit() {
+    final static String TAG_ENTRY_NAME_DEFINITION_GENERATOR = "memory-map-entry";
+
+    private void addGeneratedEntryName(String entryName) {
+        String entryKey = this.entryGenerator.onGenerateEntry(TAG_ENTRY_NAME_DEFINITION_GENERATOR);
+        List<String> list = entryNames.get(entryKey);
+        if (list == null) {
+            list = new ArrayList<>();
+            entryNames.put(entryKey, list);
+        }
+        if (!list.contains(entryName)) {
+            list.add(entryName);
+        }
+    }
+
+    private boolean removeGeneratedEntryName(String entryName) {
+        String entryKey = this.entryGenerator.onGenerateEntry(TAG_ENTRY_NAME_DEFINITION_GENERATOR);
+        List<String> list = entryNames.get(entryKey);
+        if (list != null) {
+            return list.remove(entryName);
+        }
+        return false;
+    }
+
+    public static long getLimit() {
         return limit;
     }
 
@@ -164,15 +192,43 @@ public class MemoryCache implements Cache<Bitmap> {
         }
     }
 
-    public void clear() {
+    public static int clearAll() {
         try {
             //NullPointerException sometimes happen here http://code.google.com/p/osmdroid/issues/detail?id=78
-
+            int size = cache.size();
             cache.clear();
-            size = 0;
+//            this.size = 0;
+            return size;
+        } catch (NullPointerException ex) {
+            ex.printStackTrace();
+            return 0;
+        }
+    }
+
+    public int clear() {
+        int removed = 0;
+        try {
+            synchronized (entryNames) {
+                //NullPointerException sometimes happen here http://code.google.com/p/osmdroid/issues/detail?id=78
+                if (!entryNames.isEmpty()) {
+                    return 0;
+                }
+                String entryKey = this.entryGenerator.onGenerateEntry(TAG_ENTRY_NAME_DEFINITION_GENERATOR);
+                List<String> list = entryNames.get(entryKey);
+                if (list == null || list.isEmpty()) {
+                    return 0;
+                }
+                for (String entry : list) {
+                    cache.remove(entry);
+                    removed++;
+                }
+                size = 0;
+                list.clear();
+            }
         } catch (NullPointerException ex) {
             ex.printStackTrace();
         }
+        return removed;
     }
 
     @Override
