@@ -23,6 +23,7 @@ import android.util.Base64;
  *
  * @author ferenc.hechler
  */
+@Deprecated
 public class SimpleCrypto {
 
 	public static String encrypt(String seed, String cleartext)

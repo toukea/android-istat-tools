@@ -29,4 +29,22 @@ public class TextUtils {
     public static String linearized(String text) {
         return text.replaceAll("\n", " ");
     }
+
+    public static boolean isTrimEmpty(String text) {
+        return isEmpty(trim(text));
+    }
+
+    public static int length(String text) {
+        if (text == null) {
+            return 0;
+        }
+        return text.length();
+    }
+
+    public static int trimLength(String text) {
+        if (text == null) {
+            return 0;
+        }
+        return text.trim().length();
+    }
 }

@@ -3,6 +3,7 @@ package istat.android.base.tools;
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
+import android.text.Html;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,6 +28,9 @@ public class ExampleInstrumentedTest {
         Context appContext = InstrumentationRegistry.getTargetContext();
 
         assertEquals("istat.android.base.tools.test", appContext.getPackageName());
+        String source= "bonjour les ami: \"Helooow\"";
+        String escaped= Html.escapeHtml(source);
+        System.out.println(escaped);
     }
 
     @Test

@@ -24,6 +24,7 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -1198,6 +1199,24 @@ public final class ToolKits {
                 out += count;
                 if (count == -1) {
                     break;
+                }
+                os.write(bytes, 0, count);
+            }
+            return out;
+        }
+
+        public static final long copyStream(InputStream is, OutputStream os, Decoder<byte[], byte[]> transformation) throws Exception {
+            long out = 0;
+            byte[] bytes = new byte[1024];
+            int count;
+            while (true) {
+                count = is.read(bytes, 0, 1024);
+                out += count;
+                if (count == -1) {
+                    break;
+                }
+                if (transformation != null) {
+                    bytes = transformation.decode(bytes);
                 }
                 os.write(bytes, 0, count);
             }

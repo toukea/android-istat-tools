@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import android.graphics.Bitmap;
 import android.util.Log;
@@ -44,23 +45,36 @@ public class MemoryCache implements Cache<Bitmap> {
     private static final Map<String, Bitmap> cache = Collections.synchronizedMap(new LinkedHashMap<String, Bitmap>(10, 1.5f, true));
 
     //current allocated size
-    private long size = 0;
+    private static long size = 0;
 
     //max memory cache folder used to download images in bytes
     //TODO afin de permettre des comportement dynamique mettre un callable a la place.
-    private static long limit = 4000000;
+    public final static long DEFAULT_CACHE_SIZE_LIMIT = 4000000l;
+    final static Callable<Long> DEFAULT_LIMIT_CALLABLE = new Callable<Long>() {
+        @Override
+        public Long call() {
+            //use 25% of available heap size
+            return Runtime.getRuntime().maxMemory() - Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        }
+    };
+    private static Callable<Long> limitCallable = DEFAULT_LIMIT_CALLABLE;
 
     public MemoryCache() {
-
-        //use 25% of available heap size
-        setLimit(Runtime.getRuntime().maxMemory() / 4);
     }
 
     //TODO devrait être static et general a toute la class
-    public static void setLimit(long new_limit) {
+    public static void setLimit(final long new_limit) {
+        setLimit(new Callable<Long>() {
+            @Override
+            public Long call() throws Exception {
+                return new_limit;
+            }
+        });
+        Log.i(TAG, "MemoryCache will use up to " + new_limit / 1024. / 1024. + "MB");
+    }
 
-        limit = new_limit;
-        Log.i(TAG, "MemoryCache will use up to " + limit / 1024. / 1024. + "MB");
+    public static void setLimit(Callable<Long> callable) {
+        limitCallable = callable != null ? callable : DEFAULT_LIMIT_CALLABLE;
     }
 
     public Bitmap get(String id) {
@@ -174,7 +188,14 @@ public class MemoryCache implements Cache<Bitmap> {
     }
 
     public static long getLimit() {
-        return limit;
+        try {
+            long limit = limitCallable.call();
+            Log.i(TAG, "limit= " + (limit / 1024 / 1024));
+            return limit;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return DEFAULT_CACHE_SIZE_LIMIT;
+        }
     }
 
     private void checkSize() {
@@ -195,10 +216,10 @@ public class MemoryCache implements Cache<Bitmap> {
     public static int clearAll() {
         try {
             //NullPointerException sometimes happen here http://code.google.com/p/osmdroid/issues/detail?id=78
-            int size = cache.size();
+            int out = cache.size();
             cache.clear();
-//            this.size = 0;
-            return size;
+            size = 0;
+            return out;
         } catch (NullPointerException ex) {
             ex.printStackTrace();
             return 0;
@@ -219,10 +240,11 @@ public class MemoryCache implements Cache<Bitmap> {
                     return 0;
                 }
                 for (String entry : list) {
-                    cache.remove(entry);
+                    Bitmap bitmap=cache.remove(entry);
+                    size = -getSizeInBytes(bitmap);
                     removed++;
                 }
-                size = 0;
+
                 list.clear();
             }
         } catch (NullPointerException ex) {
