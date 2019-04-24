@@ -47,14 +47,19 @@ public class AESUtils {
     }
 
     private static byte[] getRawKey(byte[] keyValue) throws Exception {
-        SecretKey key = new SecretKeySpec(keyValue, "AES");
-        byte[] raw = key.getEncoded();
+        byte[] raw = getSecretKey(keyValue).getEncoded();
         return raw;
     }
 
+    private static SecretKey getSecretKey(byte[] keyValue) throws Exception {
+        SecretKey key = new SecretKeySpec(keyValue, "AES");
+        return key;
+    }
+
+
     private static byte[] encrypt(byte[] raw, byte[] clear) throws Exception {
-        SecretKey skeySpec = new SecretKeySpec(raw, "AES");
         Cipher cipher = Cipher.getInstance("AES");
+        SecretKey skeySpec = getSecretKey(raw);
         cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
         byte[] encrypted = cipher.doFinal(clear);
         return encrypted;
@@ -62,7 +67,7 @@ public class AESUtils {
 
     private static byte[] decryptHexBytes(byte[] encrypted, String password)
             throws Exception {
-        SecretKey skeySpec = new SecretKeySpec(createBytePassword(password), "AES");
+        SecretKey skeySpec = getSecretKey(createBytePassword(password));
         Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.DECRYPT_MODE, skeySpec);
         byte[] decrypted = cipher.doFinal(encrypted);
