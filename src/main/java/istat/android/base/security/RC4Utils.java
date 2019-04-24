@@ -8,8 +8,8 @@ public class RC4Utils {
         return new String(encrypt(clear.getBytes(), password));
     }
 
-    public static String decrypt(String clear, String password) throws CryptoException {
-        return new String(decrypt(clear.getBytes(), password));
+    public static String decrypt(String encrypted, String password) throws CryptoException {
+        return new String(decrypt(encrypted.getBytes(), password));
     }
 
     public static String encrypt(String encoding, String clear, String password) throws CryptoException, UnsupportedEncodingException {
