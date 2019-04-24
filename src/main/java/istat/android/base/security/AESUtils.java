@@ -1,10 +1,15 @@
 package istat.android.base.security;
 
+import java.security.spec.KeySpec;
+
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class AESUtils {
+    final static String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding", SECRET_ALGORITHM = "AES";
 
 //    private static final byte[] keyValue =
 //            new byte[]{'c', 'o', 'd', 'i', 'n', 'g', 'a', 'f', 'f', 'a', 'i', 'r', 's', 'c', 'o', 'm'};
@@ -52,13 +57,13 @@ public class AESUtils {
     }
 
     private static SecretKey getSecretKey(byte[] keyValue) throws Exception {
-        SecretKey key = new SecretKeySpec(keyValue, "AES");
+        SecretKey key = new SecretKeySpec(keyValue, SECRET_ALGORITHM);
         return key;
     }
 
 
     private static byte[] encrypt(byte[] raw, byte[] clear) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES");
+        Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
         SecretKey skeySpec = getSecretKey(raw);
         cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
         byte[] encrypted = cipher.doFinal(clear);
@@ -68,7 +73,7 @@ public class AESUtils {
     private static byte[] decryptHexBytes(byte[] encrypted, String password)
             throws Exception {
         SecretKey skeySpec = getSecretKey(createBytePassword(password));
-        Cipher cipher = Cipher.getInstance("AES");
+        Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
         cipher.init(Cipher.DECRYPT_MODE, skeySpec);
         byte[] decrypted = cipher.doFinal(encrypted);
         return decrypted;
