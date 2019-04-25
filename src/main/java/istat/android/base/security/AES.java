@@ -1,8 +1,5 @@
 package istat.android.base.security;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 import java.io.InputStream;
@@ -15,6 +12,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
 
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,23 +28,59 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class AES {
-    public final static int SALT_LEN     = 8;
-    static final String     HEXES        = "0123456789ABCDEF";
-    String                  mPassword    = null;
-    byte[]                  mInitVec     = null;
-    byte[]                  mSalt        = new byte[SALT_LEN];
-    Cipher                  mEcipher     = null;
-    Cipher                  mDecipher    = null;
-    private final int       KEYLEN_BITS  = 128;    // see notes below where this is used.
-    private final int       ITERATIONS   = 65536;
-    private final int       MAX_FILE_BUF = 1024;
+    final static String CIPHER_ALGORITHM = "AES";
+    final static int SALT_LEN = 8;
+    public static final int DEFAULT_KEY_LENGTH_BITS = 128;    // see notes below where this is used.
+    public static final int DEFAULT_ITERATIONS = 65536;
+    public static final int DEFAULT_MAX_FILE_BUF = 1024;
+    public static final byte[] DEFAULT_SALT = new byte[SALT_LEN];
+    byte[] salt = DEFAULT_SALT;
+    private int keyLengthBits = DEFAULT_KEY_LENGTH_BITS;    // see notes below where this is used.
+    private int iterations = DEFAULT_ITERATIONS;
+    private int bufferSize = DEFAULT_MAX_FILE_BUF;
 
-    /**
-     * create an object with just the passphrase from the user. Don't do anything else yet
-     * @param password
-     */
-    public AES(String password) {
-        mPassword = password;
+    public AES() {
+    }
+
+    public byte[] getSalt() {
+        return salt;
+    }
+
+    public AES setSalt(String salt) {
+        this.salt = salt != null ? salt.getBytes() : DEFAULT_SALT;
+        return this;
+    }
+
+    public AES setSalt(byte[] salt) {
+        this.salt = salt != null ? salt : DEFAULT_SALT;
+        return this;
+    }
+
+    public AES setBufferSize(int bufferSize) {
+        this.bufferSize = bufferSize;
+        return this;
+    }
+
+    public AES setIterations(int iterations) {
+        this.iterations = iterations;
+        return this;
+    }
+
+    public AES setKeyLengthBits(int keyLengthBits) {
+        this.keyLengthBits = keyLengthBits;
+        return this;
+    }
+
+    public int getKeyLengthBits() {
+        return keyLengthBits;
+    }
+
+    public int getIterations() {
+        return iterations;
+    }
+
+    public int getBufferSize() {
+        return bufferSize;
     }
 
     public static String byteToHex(byte[] raw) {
@@ -57,15 +91,15 @@ public class AES {
         final StringBuilder hex = new StringBuilder(2 * raw.length);
 
         for (final byte b : raw) {
-            hex.append(HEXES.charAt((b & 0xF0) >> 4)).append(HEXES.charAt((b & 0x0F)));
+            hex.append(HEX.charAt((b & 0xF0) >> 4)).append(HEX.charAt((b & 0x0F)));
         }
 
         return hex.toString();
     }
 
     public static byte[] hexToByte(String hexString) {
-        int    len = hexString.length();
-        byte[] ba  = new byte[len / 2];
+        int len = hexString.length();
+        byte[] ba = new byte[len / 2];
 
         for (int i = 0; i < len; i += 2) {
             ba[i / 2] = (byte) ((Character.digit(hexString.charAt(i), 16) << 4)
@@ -77,6 +111,7 @@ public class AES {
 
     /**
      * debug/print messages
+     *
      * @param msg
      */
     private void Db(String msg) {
@@ -86,32 +121,34 @@ public class AES {
     /**
      * This is where we write out the actual encrypted data to disk using the Cipher created in setupEncrypt().
      * Pass two file objects representing the actual input (cleartext) and output file to be encrypted.
-     *
+     * <p>
      * there may be a way to write a cleartext header to the encrypted file containing the salt, but I ran
      * into uncertain problems with that.
      *
-     * @param inputStream - the cleartext file to be encrypted
+     * @param inputStream  - the cleartext file to be encrypted
      * @param outputStream - the encrypted data file
      * @throws IOException
      * @throws IllegalBlockSizeException
      * @throws BadPaddingException
      */
-    public void encrypt(InputStream inputStream, OutputStream outputStream)
+    public void encryptStream(String password, InputStream inputStream, OutputStream outputStream)
             throws IOException, IllegalBlockSizeException, BadPaddingException {
         try {
-            long             totalread = 0;
-            int              nread     = 0;
-            byte[]           inbuf     = new byte[MAX_FILE_BUF];
-            SecretKeyFactory factory   = null;
-            SecretKey        tmp       = null;
+            Cipher mEcipher;
+            byte[] mInitVec;
+            long totalread = 0;
+            int nread = 0;
+            byte[] inbuf = new byte[bufferSize];
+            SecretKeyFactory factory = null;
+            SecretKey tmp = null;
 
             // crate secureRandom salt and store  as member var for later use
-            mSalt = new byte[SALT_LEN];
+            salt = new byte[SALT_LEN];
 
             SecureRandom rnd = new SecureRandom();
 
-            rnd.nextBytes(mSalt);
-            Db("generated salt :" + byteToHex(mSalt));
+            rnd.nextBytes(salt);
+            Db("generated salt :" + byteToHex(salt));
             factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
 
             /*
@@ -121,7 +158,7 @@ public class AES {
              * The end user must also install them (not compiled in) so beware.
              * see here:  http://www.javamex.com/tutorials/cryptography/unrestricted_policy_files.shtml
              */
-            KeySpec spec = new PBEKeySpec(mPassword.toCharArray(), mSalt, ITERATIONS, KEYLEN_BITS);
+            KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, keyLengthBits);
 
             tmp = factory.generateSecret(spec);
 
@@ -138,7 +175,7 @@ public class AES {
             // get the initialization vectory and store as member var
             mInitVec = params.getParameterSpec(IvParameterSpec.class).getIV();
             Db("mInitVec is :" + byteToHex(mInitVec));
-            outputStream.write(mSalt);
+            outputStream.write(salt);
             outputStream.write(mInitVec);
 
             while ((nread = inputStream.read(inbuf)) > 0) {
@@ -146,14 +183,14 @@ public class AES {
                 totalread += nread;
 
                 // create a buffer to write with the exact number of bytes read. Otherwise a short read fills inbuf with 0x0
-                // and results in full blocks of MAX_FILE_BUF being written.
+                // and results in full blocks of bufferSize being written.
                 byte[] trimbuf = new byte[nread];
 
                 for (int i = 0; i < nread; i++) {
                     trimbuf[i] = inbuf[i];
                 }
 
-                // encrypt the buffer using the cipher obtained previosly
+                // encryptStream the buffer using the cipher obtained previosly
                 byte[] tmpBuf = mEcipher.update(trimbuf);
 
                 // I don't think this should happen, but just in case..
@@ -162,7 +199,7 @@ public class AES {
                 }
             }
 
-            // finalize the encryption since we've done it in blocks of MAX_FILE_BUF
+            // finalize the encryption since we've done it in blocks of bufferSize
             byte[] finalbuf = mEcipher.doFinal();
 
             if (finalbuf != null) {
@@ -190,37 +227,39 @@ public class AES {
     /**
      * Read from the encrypted file (input) and turn the cipher back into cleartext. Write the cleartext buffer back out
      * to disk as (output) File.
-     *
+     * <p>
      * I left CipherInputStream in here as a test to see if I could mix it with the update() and final() methods of encrypting
-     *  and still have a correctly decrypted file in the end. Seems to work so left it in.
+     * and still have a correctly decrypted file in the end. Seems to work so left it in.
      *
-     * @param inputStream - File object representing encrypted data on disk
+     * @param inputStream  - File object representing encrypted data on disk
      * @param outputStream - File object of cleartext data to write out after decrypting
      * @throws IllegalBlockSizeException
      * @throws BadPaddingException
      * @throws IOException
      */
-    public void decrypt(InputStream inputStream, OutputStream outputStream)
+    public void decryptStream(String password, InputStream inputStream, OutputStream outputStream)
             throws IllegalBlockSizeException, BadPaddingException, IOException {
         try {
+            Cipher mDecipher;
+            byte[] mInitVec;
             CipherInputStream cin;
-            long              totalread = 0;
-            int               nread     = 0;
-            byte[]            inbuf     = new byte[MAX_FILE_BUF];
+            long totalread = 0;
+            int nread = 0;
+            byte[] inbuf = new byte[bufferSize];
 
             // Read the Salt
-            inputStream.read(this.mSalt);
-            Db("generated salt :" + byteToHex(mSalt));
+            inputStream.read(this.salt);
+            Db("generated salt :" + byteToHex(salt));
 
             SecretKeyFactory factory = null;
-            SecretKey        tmp     = null;
-            SecretKey        secret  = null;
+            SecretKey tmp = null;
+            SecretKey secret = null;
 
             factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
 
-            KeySpec spec = new PBEKeySpec(mPassword.toCharArray(), mSalt, ITERATIONS, KEYLEN_BITS);
+            KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, keyLengthBits);
 
-            tmp    = factory.generateSecret(spec);
+            tmp = factory.generateSecret(spec);
             secret = new SecretKeySpec(tmp.getEncoded(), "AES");
 
             /* Decrypt the message, given derived key and initialization vector. */
@@ -232,7 +271,7 @@ public class AES {
             mInitVec = params.getParameterSpec(IvParameterSpec.class).getIV();
 
             // Read the old IV from the file to mInitVec now that size is set.
-            inputStream.read(this.mInitVec);
+            inputStream.read(mInitVec);
             Db("mInitVec is :" + byteToHex(mInitVec));
             mDecipher.init(Cipher.DECRYPT_MODE, secret, new IvParameterSpec(mInitVec));
 
@@ -264,42 +303,110 @@ public class AES {
         }
     }
 
-    /**
-     * adding main() for usage demonstration. With member vars, some of the locals would not be needed
-     */
-    public static void main(String[] args) {
+    public String encrypt(byte[] clearBytes, String password)
+            throws Exception {
+        byte[] rawKey = createBytePassword(password);
+        byte[] result = encrypt(rawKey, clearBytes);
+        return toHex(result);
+    }
 
-        // create the input.txt file in the current directory before continuing
-        File   input   = new File("input.txt");
-        File   eoutput = new File("encrypted.aes");
-        File   doutput = new File("decrypted.txt");
-        String iv      = null;
-        String salt    = null;
-        AES    en      = new AES("mypassword");
+    public String encrypt(String cleartext, String password)
+            throws Exception {
+        return encrypt(cleartext.getBytes(), password);
+    }
 
-        /*
-         * write out encrypted file
-         */
-        try {
-            en.encrypt(new FileInputStream(input), new FileOutputStream(eoutput));
-            System.out.printf("File encrypted to " + eoutput.getName() + "\niv:" + iv + "\nsalt:" + salt + "\n\n");
-        } catch (IllegalBlockSizeException | BadPaddingException | IOException e) {
-            e.printStackTrace();
+    private byte[] createBytePassword(String password) {
+        return createBytePassword(password, 16);
+    }
+
+    private byte[] createBytePassword(String password, int length) {
+        char[] chars = password.toCharArray();
+        byte[] bytes = new byte[chars.length > length ? chars.length : length];
+        for (int i = 0; i < length; i++) {
+            bytes[i] = chars.length > i ? (byte) chars[i] : 0;
         }
+        return bytes;
+    }
 
-        /*
-         * decrypt file
-         */
-        AES dc = new AES("mypassword");
-
-        /*
-         * write out decrypted file
-         */
-        try {
-            dc.decrypt(new FileInputStream(eoutput), new FileOutputStream(doutput));
-            System.out.println("decryption finished to " + doutput.getName());
-        } catch (IllegalBlockSizeException | BadPaddingException | IOException e) {
-            e.printStackTrace();
+    private byte[] createRandomBytes(int length) {
+        byte[] bytes = new byte[length];
+        char[] chars = HEX.toCharArray();
+        Random random = new Random();
+        for (int i = 0; i < length; i++) {
+            bytes[i] = (byte) chars[random.nextInt(length - 1)];
         }
+        return bytes;
+    }
+
+    public String decrypt(byte[] encryptedStringBytes, String password)
+            throws Exception {
+
+        byte[] enc = toByte(new String(encryptedStringBytes));
+        byte[] result = decryptHexBytes(enc, password);
+        return new String(result);
+    }
+
+    public String decrypt(String encrypted, String password)
+            throws Exception {
+
+        byte[] enc = toByte(encrypted);
+        byte[] result = decryptHexBytes(enc, password);
+        return new String(result);
+    }
+
+    private SecretKey getSecretKey(byte[] keyValue) throws Exception {
+        SecretKeyFactory factory;
+        SecretKey tmp;
+        SecretKey secret;
+
+        factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+        KeySpec spec = new PBEKeySpec(new String(keyValue).toCharArray(), salt, iterations, keyLengthBits);
+
+        tmp = factory.generateSecret(spec);
+        secret = new SecretKeySpec(tmp.getEncoded(), CIPHER_ALGORITHM);
+        return secret;
+    }
+
+
+    private byte[] encrypt(byte[] key, byte[] clear) throws Exception {
+        Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+        SecretKey skeySpec = getSecretKey(key);
+        cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
+        byte[] encrypted = cipher.doFinal(clear);
+        return encrypted;
+    }
+
+    private byte[] decryptHexBytes(byte[] encrypted, String password)
+            throws Exception {
+        SecretKey skeySpec = getSecretKey(createBytePassword(password));
+        Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, skeySpec);
+        byte[] decrypted = cipher.doFinal(encrypted);
+        return decrypted;
+    }
+
+    public static byte[] toByte(String hexString) {
+        int len = hexString.length() / 2;
+        byte[] result = new byte[len];
+        for (int i = 0; i < len; i++)
+            result[i] = Integer.valueOf(hexString.substring(2 * i, 2 * i + 2),
+                    16).byteValue();
+        return result;
+    }
+
+    public static String toHex(byte[] buf) {
+        if (buf == null)
+            return "";
+        StringBuffer result = new StringBuffer(2 * buf.length);
+        for (int i = 0; i < buf.length; i++) {
+            appendHex(result, buf[i]);
+        }
+        return result.toString();
+    }
+
+    private final static String HEX = "0123456789ABCDEF";
+
+    private static void appendHex(StringBuffer sb, byte b) {
+        sb.append(HEX.charAt((b >> 4) & 0x0f)).append(HEX.charAt(b & 0x0f));
     }
 }

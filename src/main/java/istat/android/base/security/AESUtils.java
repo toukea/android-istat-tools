@@ -1,6 +1,7 @@
 package istat.android.base.security;
 
 import java.security.spec.KeySpec;
+import java.util.Random;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -8,15 +9,20 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+@Deprecated
 public class AESUtils {
-    final static String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding", SECRET_ALGORITHM = "AES";
+    public final static int SALT_LEN = 8;
+    static byte[] mSalt = "qmaker-salt".getBytes();//new byte[SALT_LEN];//createRandomBytes(SALT_LEN);
+    private static final int KEY_LENGTH_BITS = 128;    // see notes below where this is used.
+    private static final int ITERATIONS = 50;
+    final static String CIPHER_ALGORITHM = "AES", SECRET_ALGORITHM = "AES";
 
 //    private static final byte[] keyValue =
 //            new byte[]{'c', 'o', 'd', 'i', 'n', 'g', 'a', 'f', 'f', 'a', 'i', 'r', 's', 'c', 'o', 'm'};
 
     public static String encrypt(byte[] clearBytes, String password)
             throws Exception {
-        byte[] rawKey = getRawKey(createBytePassword(password));
+        byte[] rawKey = createBytePassword(password);
         byte[] result = encrypt(rawKey, clearBytes);
         return toHex(result);
     }
@@ -27,10 +33,24 @@ public class AESUtils {
     }
 
     private static byte[] createBytePassword(String password) {
+        return createBytePassword(password, 16);
+    }
+
+    private static byte[] createBytePassword(String password, int length) {
         char[] chars = password.toCharArray();
-        byte[] bytes = new byte[chars.length > 16 ? chars.length : 16];
-        for (int i = 0; i < 16; i++) {
+        byte[] bytes = new byte[chars.length > length ? chars.length : length];
+        for (int i = 0; i < length; i++) {
             bytes[i] = chars.length > i ? (byte) chars[i] : 0;
+        }
+        return bytes;
+    }
+
+    private static byte[] createRandomBytes(int length) {
+        byte[] bytes = new byte[length];
+        char[] chars = HEX.toCharArray();
+        Random random = new Random();
+        for (int i = 0; i < length; i++) {
+            bytes[i] = (byte) chars[random.nextInt(length - 1)];
         }
         return bytes;
     }
@@ -51,20 +71,23 @@ public class AESUtils {
         return new String(result);
     }
 
-    private static byte[] getRawKey(byte[] keyValue) throws Exception {
-        byte[] raw = getSecretKey(keyValue).getEncoded();
-        return raw;
-    }
-
     private static SecretKey getSecretKey(byte[] keyValue) throws Exception {
-        SecretKey key = new SecretKeySpec(keyValue, SECRET_ALGORITHM);
-        return key;
+        SecretKeyFactory factory;
+        SecretKey tmp;
+        SecretKey secret;
+
+        factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+        KeySpec spec = new PBEKeySpec(new String(keyValue).toCharArray(), mSalt, ITERATIONS, KEY_LENGTH_BITS);
+
+        tmp = factory.generateSecret(spec);
+        secret = new SecretKeySpec(tmp.getEncoded(), "AES");
+        return secret;
     }
 
 
-    private static byte[] encrypt(byte[] raw, byte[] clear) throws Exception {
+    private static byte[] encrypt(byte[] key, byte[] clear) throws Exception {
         Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-        SecretKey skeySpec = getSecretKey(raw);
+        SecretKey skeySpec = getSecretKey(key);
         cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
         byte[] encrypted = cipher.doFinal(clear);
         return encrypted;
