@@ -1,7 +1,7 @@
 package istat.android.base.tools;
 
 
-import android.text.Html;
+import com.google.gson.Gson;
 
 import org.junit.Test;
 
@@ -9,9 +9,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.security.Provider;
 import java.security.Security;
+import java.util.List;
 
 import istat.android.base.security.SimpleCrypto;
-import istat.android.base.utils.AbsListWrapper;
+import istat.android.base.utils.ListWrapper;
 import istat.android.base.utils.HtmlStringUtils;
 
 import static org.junit.Assert.*;
@@ -102,7 +103,7 @@ public class ExampleUnitTest {
         TextFinder finder = new TextFinder("\\{.*\\}");
     }
 
-    class MyList extends AbsListWrapper<String> {
+    class MyList extends ListWrapper<String> implements List<String> {
         public MyList() {
             super();
             add("Hello");
@@ -112,7 +113,8 @@ public class ExampleUnitTest {
         }
 
         public String toJson() {
-            return null;
+            Gson gson = new Gson();
+            return gson.toJson(this);
         }
     }
 }

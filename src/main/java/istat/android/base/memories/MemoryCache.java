@@ -37,6 +37,7 @@ import istat.android.base.tools.TextUtils;
 /**
  * @author Toukea Tatsi (Istat)
  */
+//TODO il faut ajouter un trim static qui vide la memoire par rapport au limitCallable
 public class MemoryCache implements Cache<Bitmap> {
 
     private static final String TAG = "MemoryCache";
@@ -218,6 +219,7 @@ public class MemoryCache implements Cache<Bitmap> {
             //NullPointerException sometimes happen here http://code.google.com/p/osmdroid/issues/detail?id=78
             int out = cache.size();
             cache.clear();
+            entryNames.clear();
             size = 0;
             return out;
         } catch (NullPointerException ex) {
@@ -240,12 +242,42 @@ public class MemoryCache implements Cache<Bitmap> {
                     return 0;
                 }
                 for (String entry : list) {
-                    Bitmap bitmap=cache.remove(entry);
+                    Bitmap bitmap = cache.remove(entry);
                     size = -getSizeInBytes(bitmap);
                     removed++;
                 }
 
                 list.clear();
+            }
+        } catch (NullPointerException ex) {
+            ex.printStackTrace();
+        }
+        return removed;
+    }
+
+    //TODO bien implementer cette method.
+    public static int trim() {
+        int removed = 0;
+        try {
+            synchronized (entryNames) {
+                //NullPointerException sometimes happen here http://code.google.com/p/osmdroid/issues/detail?id=78
+                if (!entryNames.isEmpty()) {
+                    return 0;
+                }
+                // String entryKey = this.entryGenerator.onGenerateEntry(TAG_ENTRY_NAME_DEFINITION_GENERATOR);
+                for (Entry<String, List<String>> entry : entryNames.entrySet()) {
+                    List<String> list = entryNames.get(entry.getKey());
+                    if (list == null || list.isEmpty()) {
+                        return 0;
+                    }
+                    for (String entryName : list) {
+                        Bitmap bitmap = cache.remove(entryName);
+                        size = -getSizeInBytes(bitmap);
+                        removed++;
+                    }
+
+                    list.clear();
+                }
             }
         } catch (NullPointerException ex) {
             ex.printStackTrace();
@@ -263,7 +295,7 @@ public class MemoryCache implements Cache<Bitmap> {
         return cache.keySet();
     }
 
-    long getSizeInBytes(Bitmap bitmap) {
+    static long getSizeInBytes(Bitmap bitmap) {
         if (bitmap == null)
             return 0;
         return bitmap.getRowBytes() * bitmap.getHeight();
