@@ -1,0 +1,26 @@
+Bitmap realImage = BitmapFactory.decodeStream(stream);
+
+ExifInterface exif=new ExifInterface(getRealPathFromURI(imagePath));
+
+Log.d("EXIF value", exif.getAttribute(ExifInterface.TAG_ORIENTATION));
+if(exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("6")){
+
+    realImage=ImageUtil.rotate(realImage, 90);
+}else if(exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("8")){
+    realImage=ImageUtil.rotate(realImage, 270);
+}else if(exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("3")){
+    realImage=ImageUtil.rotate(realImage, 180);
+}
+The ImageUtil.rotate():
+
+public static Bitmap rotate(Bitmap bitmap, int degree) {
+    int w = bitmap.getWidth();
+    int h = bitmap.getHeight();
+
+    Matrix mtx = new Matrix();
+    mtx.postRotate(degree);
+
+    return Bitmap.createBitmap(bitmap, 0, 0, w, h, mtx, true);
+}
+--------------------------------------------
+

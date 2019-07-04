@@ -1370,8 +1370,9 @@ public final class ToolKits {
                 return word;
             }
             word = beginByUpperCase(TextUtils.trim(word));
-            String regex = "(.*\\?)$|(.*\\.)$|(.*!)$|(.*:)$|(.*;)$|(.*,)$";
-            boolean match = word.matches(regex);
+//            String regex = "((.*)(\\?|\\.|!|:|;|,|¿))$";
+            String regex = "((.*)(\\p{Punct}))$";
+            boolean match = word.replaceAll("\n", " ").matches(regex);
             if (match) {
                 return word;
             }

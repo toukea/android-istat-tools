@@ -233,7 +233,7 @@ public class MemoryCache implements Cache<Bitmap> {
         try {
             synchronized (entryNames) {
                 //NullPointerException sometimes happen here http://code.google.com/p/osmdroid/issues/detail?id=78
-                if (!entryNames.isEmpty()) {
+                if (entryNames.isEmpty()) {
                     return 0;
                 }
                 String entryKey = this.entryGenerator.onGenerateEntry(TAG_ENTRY_NAME_DEFINITION_GENERATOR);
@@ -255,31 +255,37 @@ public class MemoryCache implements Cache<Bitmap> {
         return removed;
     }
 
-    //TODO bien implementer cette method.
     public static int trim() {
         int removed = 0;
         try {
             synchronized (entryNames) {
                 //NullPointerException sometimes happen here http://code.google.com/p/osmdroid/issues/detail?id=78
-                if (!entryNames.isEmpty()) {
+                if (entryNames.isEmpty()) {
                     return 0;
+                }
+                long limit = limitCallable.call();
+                if (size < limit) {
+                    return removed;
                 }
                 // String entryKey = this.entryGenerator.onGenerateEntry(TAG_ENTRY_NAME_DEFINITION_GENERATOR);
                 for (Entry<String, List<String>> entry : entryNames.entrySet()) {
                     List<String> list = entryNames.get(entry.getKey());
                     if (list == null || list.isEmpty()) {
-                        return 0;
+                        continue;
                     }
                     for (String entryName : list) {
                         Bitmap bitmap = cache.remove(entryName);
                         size = -getSizeInBytes(bitmap);
                         removed++;
+                        if (size < limit) {
+                            break;
+                        }
                     }
 
                     list.clear();
                 }
             }
-        } catch (NullPointerException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         return removed;
