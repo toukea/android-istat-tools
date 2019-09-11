@@ -7,8 +7,10 @@ import java.security.MessageDigest;
 
 public class MD5 {
     public static byte[] createChecksum(byte[] bytes) throws Exception {
-        InputStream fis = new ByteArrayInputStream(bytes);
+        return createChecksum(new ByteArrayInputStream(bytes));
+    }
 
+    public static byte[] createChecksum(InputStream fis) throws Exception {
         byte[] buffer = new byte[1024];
         MessageDigest complete = MessageDigest.getInstance("MD5");
         int numRead;
@@ -56,6 +58,16 @@ public class MD5 {
 
     public static String getMD5Checksum(byte[] bytes) throws Exception {
         byte[] b = createChecksum(bytes);
+        String result = "";
+
+        for (int i = 0; i < b.length; i++) {
+            result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
+        }
+        return result;
+    }
+
+    public static String getMD5Checksum(InputStream inputStream) throws Exception {
+        byte[] b = createChecksum(inputStream);
         String result = "";
 
         for (int i = 0; i < b.length; i++) {

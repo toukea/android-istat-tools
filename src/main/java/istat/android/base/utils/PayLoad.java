@@ -7,7 +7,7 @@ public class PayLoad {
     private Object[] variableArray;
 
     public PayLoad(Object[] vars) {
-        this.variableArray = vars;
+        this.variableArray = vars != null ? vars : new Object[0];
     }
 
     public int getCount() {
