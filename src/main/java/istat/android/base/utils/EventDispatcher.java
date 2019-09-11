@@ -1,34 +1,25 @@
 package istat.android.base.utils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class EventDispatcher {
     final static String EVENT_ALL = "event_dispatcher_all";
-    RunnableDispatcher runnableDispatcher = RunnableDispatcher.DEFAULT;
     ConcurrentHashMap<String, List<EventListener>> eventNameListenerMap = new ConcurrentHashMap<>();
-    static HashMap<String, EventDispatcher> nameDispatcherMap = new HashMap();
     String nameSpace;
+    static EventDispatcher instance;
 
-    public static EventDispatcher from(String nameSpace) {
-        EventDispatcher dispatcher = nameDispatcherMap.get(nameSpace);
-        if (dispatcher == null) {
-            dispatcher = new EventDispatcher(nameSpace);
-            nameDispatcherMap.put(nameSpace, dispatcher);
+    public static EventDispatcher getInstance() {
+        if (instance == null) {
+            instance = new EventDispatcher();
         }
-        return dispatcher;
+        return instance;
     }
 
-    public void setRunnableDispatcher(RunnableDispatcher runnableDispatcher) {
-        this.runnableDispatcher = runnableDispatcher;
-    }
+    private EventDispatcher() {
 
-    private EventDispatcher(String nameSpace) {
-        this.nameSpace = nameSpace;
     }
 
     public String getNameSpace() {
@@ -40,6 +31,53 @@ public class EventDispatcher {
     }
 
     public boolean dispatchEvent(String eventName, PayLoad payLoad) {
+        List<EventListener> listeners = getEventListeners(eventName);
+        for (EventListener listener : listeners) {
+            if (!listener.onEvent(eventName, payLoad)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void dispatchEvent(RunnableDispatcher dispatcher, final String eventName, Object... payLoad) {
+        dispatchEvent(dispatcher, 0, eventName, new PayLoad(payLoad), null);
+    }
+
+    public void dispatchEvent(RunnableDispatcher dispatcher, final String eventName, final PayLoad payLoad) {
+        dispatchEvent(dispatcher, 0, eventName, payLoad, null);
+    }
+
+    public void dispatchEvent(RunnableDispatcher dispatcher, final String eventName, final PayLoad payLoad, final CompletionCallback callback) {
+        dispatchEvent(dispatcher, 0, eventName, payLoad, callback);
+    }
+
+    public void dispatchEvent(RunnableDispatcher dispatcher, int delay, final String eventName, final PayLoad payLoad, final CompletionCallback callback) {
+        if (dispatcher == null) {
+            dispatcher = RunnableDispatcher.DEFAULT;
+        }
+        final List<EventListener> listeners = getEventListeners(eventName);
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                for (EventListener listener : listeners) {
+                    if (!listener.onEvent(eventName, payLoad)) {
+                        if (callback != null) {
+                            callback.onCompleted(false);
+                        }
+                        return;
+                    }
+                }
+                if (callback != null) {
+                    callback.onCompleted(true);
+                }
+            }
+        };
+        dispatcher.dispatch(runnable, delay);
+    }
+
+
+    private List<EventListener> getEventListeners(String eventName) {
         List<EventListener> listeners = new ArrayList();
         List<EventListener> dispatchAll = getEventDispatcherListByEventName(EVENT_ALL);
         List<EventListener> dispatchEvents = getEventDispatcherListByEventName(eventName);
@@ -49,12 +87,7 @@ public class EventDispatcher {
         if (dispatchEvents != null && !dispatchEvents.isEmpty()) {
             listeners.addAll(dispatchEvents);
         }
-        for (EventListener listener : listeners) {
-            if (!listener.onEvent(eventName, payLoad)) {
-                return false;
-            }
-        }
-        return true;
+        return listeners;
     }
 
     public boolean registerEventListener(EventListener listener, String... eventNames) {
@@ -158,6 +191,10 @@ public class EventDispatcher {
                 return 0;
             }
         };
+    }
+
+    public interface CompletionCallback {
+        void onCompleted(boolean completed);
     }
 
 }
