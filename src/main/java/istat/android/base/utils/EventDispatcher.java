@@ -8,7 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class EventDispatcher {
     final static String EVENT_ALL = "event_dispatcher_all";
     ConcurrentHashMap<String, List<EventListener>> eventNameListenerMap = new ConcurrentHashMap<>();
-    String nameSpace;
     static EventDispatcher instance;
 
     public static EventDispatcher getInstance() {
@@ -20,10 +19,6 @@ public class EventDispatcher {
 
     private EventDispatcher() {
 
-    }
-
-    public String getNameSpace() {
-        return nameSpace;
     }
 
     public boolean dispatchEvent(String eventName, Object... payload) {
@@ -50,6 +45,14 @@ public class EventDispatcher {
 
     public void dispatchEvent(RunnableDispatcher dispatcher, final String eventName, final PayLoad payLoad, final CompletionCallback callback) {
         dispatchEvent(dispatcher, 0, eventName, payLoad, callback);
+    }
+
+    public void dispatchEvent(final String eventName, final PayLoad payLoad, final CompletionCallback callback) {
+        dispatchEvent(null, 0, eventName, payLoad, callback);
+    }
+
+    public void dispatchEvent(int delay, final String eventName, final PayLoad payLoad, final CompletionCallback callback) {
+        dispatchEvent(null, delay, eventName, payLoad, callback);
     }
 
     public void dispatchEvent(RunnableDispatcher dispatcher, int delay, final String eventName, final PayLoad payLoad, final CompletionCallback callback) {

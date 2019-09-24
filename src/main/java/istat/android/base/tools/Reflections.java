@@ -22,18 +22,45 @@ import dalvik.system.DexFile;
  */
 
 public class Reflections {
-    public static final Class<?> getGenericTypeClass(Class<?> baseClass, int genericIndex) {
+
+    public static final <T> Class<T> getGenericTypeClass(Class<T> baseClass, int genericIndex) {
         try {
-            String className = ((ParameterizedType) baseClass
-                    .getGenericSuperclass()).getActualTypeArguments()[genericIndex]
-                    .toString().replaceFirst("class", "").trim();
-            Class<?> clazz = Class.forName(className);
+            Type type0 = getGenericType(baseClass, genericIndex);
+            String className = type0.toString().replaceFirst("class", "").trim();
+            Class<T> clazz = (Class<T>) Class.forName(className);
             return clazz;
         } catch (Exception e) {
             throw new IllegalStateException(
                     "Class is not parametrized with generic type!!! Please use extends <> ");
         }
     }
+
+    public static <T> Type getGenericType(Class<T> baseClass, int index) {
+        // To make it use generics without supplying the class type
+        Type type = baseClass.getGenericSuperclass();
+
+        while (!(type instanceof ParameterizedType)) {
+            if (type instanceof ParameterizedType) {
+                type = ((Class<?>) ((ParameterizedType) type).getRawType()).getGenericSuperclass();
+            } else {
+                type = ((Class<?>) type).getGenericSuperclass();
+            }
+        }
+        return ((ParameterizedType) type).getActualTypeArguments()[index];
+    }
+
+//    public static final Class<?> getGenericTypeClass(Class<?> baseClass, int genericIndex) {
+//        try {
+//            String className = ((ParameterizedType) baseClass
+//                    .getGenericSuperclass()).getActualTypeArguments()[genericIndex]
+//                    .toString().replaceFirst("class", "").trim();
+//            Class<?> clazz = Class.forName(className);
+//            return clazz;
+//        } catch (Exception e) {
+//            throw new IllegalStateException(
+//                    "Class is not parametrized with generic type!!! Please use extends <> ");
+//        }
+//    }
 
     public static List<Field> getAllFieldFields(Class<?> cLass, boolean includeSuper, boolean acceptStatic) {
         return getAllFieldFields(cLass, true, includeSuper, acceptStatic);
