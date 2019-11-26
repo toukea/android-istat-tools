@@ -77,7 +77,7 @@ public class Preferences {
 
     public <T> T load(String key, Class<T> cLass) {
         Gson gson = new Gson();
-        String jsonString = LoadPreferences(this.context, this.file, key, (String) null, this.mode);
+        String jsonString = LoadPreferences(this.context, this.file, key, null, this.mode);
         if (TextUtils.isEmpty(jsonString)) {
             return null;
         }
@@ -85,7 +85,7 @@ public class Preferences {
     }
 
     public String load(String key) {
-        return LoadPreferences(this.context, this.file, key, (String) null, this.mode);
+        return LoadPreferences(this.context, this.file, key,  null, this.mode);
     }
 
     public String load(String key, String deflt) {

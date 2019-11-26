@@ -55,7 +55,7 @@ public class MemoryCache implements Cache<Bitmap> {
         @Override
         public Long call() {
             //use 25% of available heap size
-            return Runtime.getRuntime().maxMemory() - Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+            return (Runtime.getRuntime().maxMemory() - Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 2;
         }
     };
     private static Callable<Long> limitCallable = DEFAULT_LIMIT_CALLABLE;

@@ -638,11 +638,11 @@ public class ImageLoader {
     }
 
     private void notifyImageLoadError(PhotoToLoad photoToLoad, LoadCallback listener, Throwable th) {
-        if (listener != null) {
-            listener.onLoadCompleted(photoToLoad, false);
-        }
         if ((listener == null || (listener != null && !listener.onLoadError(photoToLoad, th))) && (photoToLoad.imageView != null && errorBitmapHolder != null)) {
             photoToLoad.imageView.setImageBitmap(errorBitmapHolder);
+        }
+        if (listener != null) {
+            listener.onLoadCompleted(photoToLoad, false);
         }
     }
 
@@ -653,12 +653,13 @@ public class ImageLoader {
                     photoToLoad.imageView.setImageBitmap(bitmap);
                 }
             }
+            if (listener != null) {
+                listener.onLoadCompleted(photoToLoad, bitmap != null);
+            }
         } else {
             notifyImageLoadError(photoToLoad, listener, new IOException("Unable to load image from: " + photoToLoad.url));
         }
-        if (listener != null) {
-            listener.onLoadCompleted(photoToLoad, bitmap != null);
-        }
+
     }
 
     public Cache<Bitmap> getMemoryCache() {

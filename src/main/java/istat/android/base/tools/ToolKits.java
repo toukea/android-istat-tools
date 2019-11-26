@@ -1,33 +1,5 @@
 package istat.android.base.tools;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.SequenceInputStream;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLConnection;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.Callable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -56,6 +28,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Vibrator;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Display;
@@ -63,6 +36,33 @@ import android.view.Surface;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.SequenceInputStream;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLConnection;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import istat.android.base.interfaces.Decoder;
 
@@ -297,7 +297,8 @@ public final class ToolKits {
     public static final class FileKits {
         public FileKits() {
         }
-//        public static List<File> getStorage(Context context) {
+
+        //        public static List<File> getStorage(Context context) {
 //            final File[] appsDir = ContextCompat.getExternalFilesDirs(context, null);
 //            final List<File> extRootPaths = new ArrayList<>();
 //            for (final File file : appsDir) {
@@ -305,6 +306,18 @@ public final class ToolKits {
 //            }
 //            return extRootPaths;
 //        }
+
+        public static String queryName(Context context, Uri uri) {
+            ContentResolver resolver = context.getContentResolver();
+            Cursor returnCursor =
+                    resolver.query(uri, null, null, null, null);
+            assert returnCursor != null;
+            int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+            returnCursor.moveToFirst();
+            String name = returnCursor.getString(nameIndex);
+            returnCursor.close();
+            return name;
+        }
 
         public static void startMediaScanner(Context context, File directory) {
             startMediaScanner(context, directory.getAbsolutePath());
@@ -1018,6 +1031,7 @@ public final class ToolKits {
                 return true;
             }
         }
+
         public static void setSystemUiVisible(Activity activity, boolean state) {
             if (state) {
                 showSystemUI(activity);
@@ -1027,10 +1041,12 @@ public final class ToolKits {
         }
 
         public static void showSystemUI(Activity activity) {
-            activity.getWindow().getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                activity.getWindow().getDecorView().setSystemUiVisibility(
+                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+            }
         }
 
         public static void hideToolBar(Activity activity) {
@@ -1038,7 +1054,10 @@ public final class ToolKits {
             // BEGIN_INCLUDE (get_current_ui_flags)
             // The UI options currently enabled are represented by a bitfield.
             // getSystemUiVisibility() gives us that bitfield.
-            int uiOptions = activity.getWindow().getDecorView().getSystemUiVisibility();
+            int uiOptions = 0;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB) {
+                uiOptions = activity.getWindow().getDecorView().getSystemUiVisibility();
+            }
             int newUiOptions = uiOptions;
             // END_INCLUDE (get_current_ui_flags)
             // BEGIN_INCLUDE (toggle_ui_flags)
@@ -1072,7 +1091,9 @@ public final class ToolKits {
                 newUiOptions ^= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
             }
 
-            activity.getWindow().getDecorView().setSystemUiVisibility(newUiOptions);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                activity.getWindow().getDecorView().setSystemUiVisibility(newUiOptions);
+            }
             //END_INCLUDE (set_ui_flags)
 
         }
@@ -1521,9 +1542,14 @@ public final class ToolKits {
             return a > 9 || a < 0 ? "" + a : "0" + a;
         }
 
-        public static final String adjustNumber(float a) {
+        public static final String adjustNumber(double a) {
             return (float) ((int) a) == a ? "" + (int) a : "" + a;
         }
+
+        public static final String adjustedSweetNumber(double a) {
+            return (float) ((int) a) == a ? sweetNumber((int) a) : "" + a;
+        }
+
     }
 
     public static final class WordFormat {
