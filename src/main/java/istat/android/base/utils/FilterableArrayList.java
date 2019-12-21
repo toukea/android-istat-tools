@@ -25,15 +25,7 @@ public class FilterableArrayList<T> extends ArrayList<T> implements Filterable<T
 
     public FilterableArrayList(List<T> collection, Filter<T> filter) {
         super(collection);
-        if (collection != null) {
-            this.fullContent = collection;
-        } else {
-            this.fullContent = new ArrayList<>();
-            if (!collection.isEmpty()) {
-                this.fullContent.addAll(collection);
-            }
-        }
-
+        this.fullContent = collection != null ? new ArrayList(collection) : new ArrayList();
         this.filter = filter;
         if (filter != null) {
             apply(filter);

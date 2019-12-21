@@ -778,6 +778,9 @@ public final class ToolKits {
         }
 
         public static final void closeKeyboard(Activity activity) {
+            if (activity == null) {
+                return;
+            }
             InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(activity.getCurrentFocus() != null ? activity.getCurrentFocus().getWindowToken() : null, 0);
         }
