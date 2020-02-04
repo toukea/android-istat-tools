@@ -16,6 +16,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.pm.Signature;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Point;
@@ -1201,6 +1202,40 @@ public final class ToolKits {
                 }
             }
             throw new FileNotFoundException("Application not Found for package name:" + packageName);
+        }
+
+        public static void checkSignature(final Context context, String appCertificate) {
+            try {
+                Signature[] signatures = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_SIGNATURES).signatures;
+
+                if (appCertificate == null || appCertificate.equals(signatures[0].toCharsString())) {
+                    // Kill the process without warning. If someone changed the certificate
+                    // is better not to give a hint about why the app stopped working
+                    android.os.Process.killProcess(android.os.Process.myPid());
+                }
+            } catch (PackageManager.NameNotFoundException ex) {
+                // Must never fail, so if it does, means someone played with the apk, so kill the process
+                android.os.Process.killProcess(android.os.Process.myPid());
+            }
+        }
+
+        public static boolean packageExists(Context context, final String packageName) {
+            try {
+                ApplicationInfo info = context.getPackageManager().getApplicationInfo(packageName, 0);
+
+                if (info == null) {
+                    // No need really to test for null, if the package does not
+                    // exist it will really rise an exception. but in case Google
+                    // changes the API in the future lets be safe and test it
+                    return false;
+                }
+
+                return true;
+            } catch (Exception ex) {
+                // If we get here only means the Package does not exist
+            }
+
+            return false;
         }
     }
 
