@@ -1,21 +1,34 @@
 package istat.android.base.tools;
 
 
+import android.util.Base64;
+
 import com.google.gson.Gson;
 
 import org.junit.Test;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 
-import istat.android.base.security.SimpleCrypto;
-import istat.android.base.utils.ListWrapper;
-import istat.android.base.utils.HtmlStringUtils;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
-import static org.junit.Assert.*;
+import istat.android.base.security.RSA;
+import istat.android.base.security.SimpleCrypto;
+import istat.android.base.utils.HtmlStringUtils;
+import istat.android.base.utils.ListWrapper;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -116,5 +129,24 @@ public class ExampleUnitTest {
             Gson gson = new Gson();
             return gson.toJson(this);
         }
+    }
+
+
+    @Test
+    public void encryptDecryptRSA() throws NoSuchAlgorithmException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, InvalidKeySpecException, BadPaddingException, SignatureException {
+        KeyPair keyPair = RSA.generateKeyPair(512);
+        String original = "papa est parti au travail !";
+        System.out.println("original=" + original);
+        byte[] encryptedBytes = RSA.encrypt(original, keyPair.getPublic());
+        String encryptedString = Base64.encodeToString(encryptedBytes, Base64.NO_WRAP);
+        System.out.println("encrypted64=" + encryptedString);
+        String decryptString = RSA.decrypt(Base64.decode(encryptedString, Base64.NO_WRAP), keyPair.getPrivate());
+        System.out.println("decrypted=" + decryptString);
+        byte[] signature = RSA.sign(original.getBytes(), keyPair.getPrivate());
+        System.out.println(Base64.encodeToString(signature, Base64.NO_WRAP));
+        boolean verified = RSA.verify(original.getBytes(), signature, keyPair.getPublic());
+        System.out.println("verified=" + verified);
+
+
     }
 }
