@@ -1,7 +1,11 @@
 package istat.android.base.memories;
 
 
+import android.graphics.Bitmap;
+import android.util.Log;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -11,9 +15,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
-
-import android.graphics.Bitmap;
-import android.util.Log;
 
 import istat.android.base.interfaces.EntryGenerator;
 import istat.android.base.tools.TextUtils;
@@ -299,6 +300,12 @@ public class MemoryCache implements Cache<Bitmap> {
     @Override
     public Set<String> keySet() {
         return cache.keySet();
+    }
+
+    @Override
+    public Collection<Bitmap> values() {
+        //TODO implementer cette methode
+        return null;
     }
 
     static long getSizeInBytes(Bitmap bitmap) {

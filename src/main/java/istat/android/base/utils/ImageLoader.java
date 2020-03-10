@@ -1,16 +1,16 @@
 package istat.android.base.utils;
 
-import istat.android.base.interfaces.EntryGenerator;
-import istat.android.base.memories.Cache;
-import istat.android.base.memories.FileCache;
-import istat.android.base.memories.MemoryCache;
-import istat.android.base.tools.Bitmaps;
-import istat.android.base.tools.ToolKits;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import android.widget.ImageView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,18 +22,16 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import android.os.Handler;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.Looper;
-import android.util.Log;
-import android.widget.ImageView;
+import istat.android.base.interfaces.EntryGenerator;
+import istat.android.base.memories.Cache;
+import istat.android.base.memories.FileCache;
+import istat.android.base.memories.MemoryCache;
+import istat.android.base.tools.Bitmaps;
+import istat.android.base.tools.ToolKits;
 
 import static istat.android.base.tools.Bitmaps.getBitmapFromPath;
 

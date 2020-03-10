@@ -1,5 +1,6 @@
 package istat.android.base.memories;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -8,11 +9,11 @@ import java.util.Set;
 public interface Cache<T> {
     T put(String key, T value);
 
-    T remove(String filePath);
+    T remove(String entryName);
 
-    boolean containsKey(String filePath);
+    boolean containsKey(String entryName);
 
-    T get(String name);
+    T get(String entryName);
 
     int size();
 
@@ -21,4 +22,6 @@ public interface Cache<T> {
     boolean isEmpty();
 
     Set<String> keySet();
+
+    Collection<T> values();
 }

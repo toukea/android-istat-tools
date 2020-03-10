@@ -989,6 +989,22 @@ public final class ToolKits {
             return v.getLocalVisibleRect(rect);
         }
 
+        public static int setOrientationLocked(Activity context) {
+            if (context == null) {
+                return ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
+            }
+            int currentOrientation = context.getRequestedOrientation();
+            int orientation = context.getWindowManager().getDefaultDisplay()
+                    .getRotation();
+            if (orientation == Surface.ROTATION_90
+                    || orientation == Surface.ROTATION_270) {
+                istat.android.base.tools.ToolKits.Screen.setLandScape(context);
+            } else {
+                istat.android.base.tools.ToolKits.Screen.setPortrait(context);
+            }
+            return currentOrientation;
+        }
+
         public static final void setFullScreen(Activity activity) {
             activity.getWindow().setFlags(1024, 1024);
         }

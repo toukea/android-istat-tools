@@ -28,7 +28,7 @@ public class EventDispatcher {
     public boolean dispatchEvent(String eventName, PayLoad payLoad) {
         List<EventListener> listeners = getEventListeners(eventName);
         for (EventListener listener : listeners) {
-            if (!listener.onEvent(eventName, payLoad)) {
+            if (listener.onEvent(eventName, payLoad)) {
                 return false;
             }
         }
@@ -115,7 +115,7 @@ public class EventDispatcher {
                 return false;
             }
         }
-        return false;
+        return true;
     }
 
     private List<EventListener> getEventDispatcherListByEventName(String eventName) {
@@ -168,6 +168,12 @@ public class EventDispatcher {
     }
 
     public interface EventListener {
+        /**
+         * Called when an event is dispatched.
+         * @param eventName the name of the dispatched event
+         * @param payLoad the payload of the event
+         * @return should cancel dispatching ?
+         */
         boolean onEvent(String eventName, PayLoad payLoad);
     }
 

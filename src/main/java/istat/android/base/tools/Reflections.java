@@ -1,7 +1,6 @@
 package istat.android.base.tools;
 
 import android.content.Context;
-import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.IOException;
@@ -22,6 +21,13 @@ import dalvik.system.DexFile;
  */
 
 public class Reflections {
+
+    public static <T> T getPrivateField(Object source, String fieldName)
+            throws NoSuchFieldException, IllegalAccessException {
+        final Field objectField = source.getClass().getDeclaredField(fieldName);
+        objectField.setAccessible(true);
+        return (T) objectField.get(source);
+    }
 
     public static final <T> Class<T> getGenericTypeClass(Class<T> baseClass, int genericIndex) {
         try {

@@ -1,14 +1,14 @@
 package istat.android.base.memories;
 
-import java.io.File;
-import java.util.Set;
-
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
+import java.io.File;
+import java.util.Collection;
+import java.util.Set;
+
 import istat.android.base.interfaces.EntryGenerator;
-import istat.android.base.tools.ToolKits;
 
 /*
  * Copyright (C) 2014 Istat Dev.
@@ -259,6 +259,13 @@ public class FileCache implements Cache<File> {
 
     @Override
     public Set<String> keySet() {
+        //TODO implementer cette methode
+        return null;
+    }
+
+    @Override
+    public Collection<File> values() {
+        //TODO implementer cette methode
         return null;
     }
 
