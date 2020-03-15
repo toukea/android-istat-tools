@@ -1343,8 +1343,19 @@ public final class ToolKits {
 
         @SuppressLint("NewApi")
         public static long bufferedCopyStream(InputStream in, OutputStream ou) throws IOException {
-            try (BufferedInputStream br = new BufferedInputStream(in);
-                 BufferedOutputStream bw = new BufferedOutputStream(ou)) {
+           return bufferedCopyStream(in, ou, true);
+        }
+
+        @SuppressLint("NewApi")
+        public static long bufferedCopyStream(InputStream in, OutputStream ou, boolean autoClose) throws IOException {
+            if (autoClose) {
+                try (BufferedInputStream br = new BufferedInputStream(in);
+                     BufferedOutputStream bw = new BufferedOutputStream(ou)) {
+                    return copyStream(br, bw);
+                }
+            } else {
+                BufferedInputStream br = new BufferedInputStream(in);
+                BufferedOutputStream bw = new BufferedOutputStream(ou);
                 return copyStream(br, bw);
             }
         }
