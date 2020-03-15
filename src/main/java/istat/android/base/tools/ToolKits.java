@@ -39,6 +39,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -1339,6 +1340,33 @@ public final class ToolKits {
             }
             return out;
         }
+
+        @SuppressLint("NewApi")
+        public static long bufferedCopyStream(InputStream in, OutputStream ou) throws IOException {
+            try (BufferedInputStream br = new BufferedInputStream(in);
+                 BufferedOutputStream bw = new BufferedOutputStream(ou)) {
+                return copyStream(br, bw);
+            }
+        }
+
+//        @SuppressLint("NewApi")
+//        public static long bufferedCopyStream(InputStream in, OutputStream ou) throws IOException {
+//            long out = 0;
+//            try (BufferedReader br = new BufferedReader(
+//                    new InputStreamReader(in));
+//                 BufferedWriter bw = new BufferedWriter(
+//                         new OutputStreamWriter(ou))) {
+//
+//                String line;
+//                while ((line = br.readLine()) != null) {
+//                    out += line.length();
+//                    bw.write(line);
+//                    bw.newLine();
+//                }
+//            }
+//            return out;
+//        }
+
 
         public static final long copyStream(InputStream is, OutputStream os, Decoder<byte[], byte[]> transformation) throws Exception {
             long out = 0;
