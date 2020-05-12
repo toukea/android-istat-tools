@@ -191,9 +191,9 @@ public class ImageLoader {
         // Store image and url in PhotoToLoad object
         PhotoToLoad p = new PhotoToLoad(url, imageView);
 
-        // pass PhotoToLoad object to PhotosLoader runnable class
-        // and submit PhotosLoader runnable to executers to run runnable
-        // Submits a PhotosLoader runnable task for execution
+        // pass PhotoToLoad object to PhotosLoader activityTask class
+        // and submit PhotosLoader activityTask to executers to run activityTask
+        // Submits a PhotosLoader activityTask task for execution
         Runnable photoToLoadRunnable = new PhotosLoader(p, mLoadListener);
         executorService.submit(photoToLoadRunnable);
 
@@ -243,7 +243,7 @@ public class ImageLoader {
 
                 // Causes the Runnable bd (BitmapDisplayer) to be added to the
                 // message queue.
-                // The runnable will be run on the thread to which this handler
+                // The activityTask will be run on the thread to which this handler
                 // is attached.
                 // BitmapDisplayer run method will call
                 handler.post(bd);

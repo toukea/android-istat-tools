@@ -19,7 +19,7 @@ public class ActivityLifecycleTaskRunner {
             WHEN_ACTIVITY_STOPPED = 4,
             WHEN_ACTIVITY_SAVE_INSTANCE_STATE = 5,
             WHEN_ACTIVITY_DESTROYED = 6;
-    final ConcurrentSkipListMap<String, List<RunnableDelayPair>> taskQueue = new ConcurrentSkipListMap<>();
+    final ConcurrentSkipListMap<String, List<TaskDelayPair>> taskQueue = new ConcurrentSkipListMap<>();
     Handler mHandler = new Handler(Looper.getMainLooper());
 
     static ActivityLifecycleTaskRunner instance;
@@ -63,16 +63,22 @@ public class ActivityLifecycleTaskRunner {
         }
     };
 
-    private void executeTask(Activity activity, int when) {
+    private void executeTask(final Activity activity, final int when) {
         String entryName = getEntryName(activity.getClass(), when);
-        List<RunnableDelayPair> pairs = taskQueue.get(entryName);
+        List<TaskDelayPair> pairs = taskQueue.get(entryName);
         if (pairs != null && !pairs.isEmpty()) {
-            for (RunnableDelayPair pair : pairs) {
-                if (pair.runnable != null) {
+            for (final TaskDelayPair pair : pairs) {
+                if (pair.activityTask != null) {
+                    Runnable runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            pair.activityTask.onRun(activity, when);
+                        }
+                    };
                     if (pair.delay == 0) {
-                        pair.runnable.run();
+                        runnable.run();
                     } else {
-                        mHandler.postDelayed(pair.runnable, pair.delay);
+                        mHandler.postDelayed(runnable, pair.delay);
                     }
                 }
             }
@@ -99,15 +105,38 @@ public class ActivityLifecycleTaskRunner {
         application.registerActivityLifecycleCallbacks(mActivityLifecycleCallbacks);
     }
 
-    public static boolean planToRun(Application application, Class<? extends Activity> target, Runnable runnable, int when) {
+    public static boolean planToRun(Application application, Class<? extends Activity> target, final Runnable runnable, int when) {
         return planToRun(application, target, runnable, when, 0);
     }
 
-    public static boolean planToRun(Application application, Class<? extends Activity> target, Runnable runnable, int when, long delay) {
+    public static boolean planToRun(Application application, Class<? extends Activity> target, final Runnable runnable, int when, long delay) {
+        if (runnable == null) {
+            return false;
+        }
+        return planToRun(application, target, new ActivityTak() {
+            @Override
+            public void onRun(Activity activity, int when) {
+                runnable.run();
+            }
+        }, when, delay);
+
+    }
+
+    public static boolean planToRun(Application application, Class<? extends Activity> target, ActivityTak activityTak, int when) {
+        return planToRun(application, target, activityTak, when, 0);
+    }
+
+    public static boolean planToRun(Application application, Class<? extends Activity> target, ActivityTak activityTak, int when, long delay) {
+        if (activityTak == null) {
+            return false;
+        }
         if (instance == null) {
             instance = new ActivityLifecycleTaskRunner(application);
         }
-        return instance.planToRun(target, runnable, when, delay);
+        if (when < 0) {
+            when = 0;
+        }
+        return instance.planToRun(target, activityTak, when, delay);
     }
 
     public static int unPlanAll() {
@@ -119,7 +148,7 @@ public class ActivityLifecycleTaskRunner {
         return 0;
     }
 
-    public static int unplanAll(Runnable runnable) {
+    public static int unplanAll(ActivityTak activityTak) {
         if (instance == null) {
             return 0;
         }
@@ -127,7 +156,7 @@ public class ActivityLifecycleTaskRunner {
         return 0;
     }
 
-    public static int unplanAll(Class<? extends Activity> target, Runnable runnable) {
+    public static int unplanAll(Class<? extends Activity> target, ActivityTak activityTak) {
         if (instance == null) {
             return 0;
         }
@@ -135,7 +164,7 @@ public class ActivityLifecycleTaskRunner {
         return 0;
     }
 
-    public static boolean unplan(Class<? extends Activity> target, int when, Runnable runnable) {
+    public static boolean unplan(Class<? extends Activity> target, int when, ActivityTak activityTak) {
         if (instance == null) {
             return false;
         }
@@ -144,10 +173,10 @@ public class ActivityLifecycleTaskRunner {
     }
 
 
-    private boolean planToRun(Class<? extends Activity> target, Runnable runnable, int when, long delay) {
+    private boolean planToRun(Class<? extends Activity> target, ActivityTak activityTak, int when, long delay) {
         String entryName = getEntryName(target, when);
-        RunnableDelayPair pair = new RunnableDelayPair(runnable, delay);
-        List<RunnableDelayPair> pairs = taskQueue.get(entryName);
+        TaskDelayPair pair = new TaskDelayPair(activityTak, delay);
+        List<TaskDelayPair> pairs = taskQueue.get(entryName);
         if (pairs == null) {
             pairs = new ArrayList<>();
             taskQueue.put(entryName, pairs);
@@ -156,13 +185,17 @@ public class ActivityLifecycleTaskRunner {
         return false;
     }
 
-    class RunnableDelayPair {
-        final Runnable runnable;
+    class TaskDelayPair {
+        final ActivityTak activityTask;
         final long delay;
 
-        public RunnableDelayPair(Runnable runnable, long delay) {
-            this.runnable = runnable;
+        public TaskDelayPair(ActivityTak runnable, long delay) {
+            this.activityTask = runnable;
             this.delay = delay;
         }
+    }
+
+    public interface ActivityTak {
+        void onRun(Activity activity, int when);
     }
 }

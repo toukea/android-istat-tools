@@ -19,9 +19,14 @@ package istat.android.base.tools;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.view.WindowManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -235,14 +240,19 @@ public class Language {
                 if (newLocale != null) {
                     // update the app's configuration to use the new Locale
                     final Resources resources = context.getBaseContext().getResources();
-                    final android.content.res.Configuration conf = resources.getConfiguration();
-                    conf.locale = newLocale;
+                    final Configuration conf = resources.getConfiguration();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                        conf.setLocale(newLocale);
+                    } else {
+                        conf.locale = newLocale;
+                    }
                     resources.updateConfiguration(conf, resources.getDisplayMetrics());
 
                     // overwrite the default Locale
                     Locale.setDefault(newLocale);
                 }
             } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -254,6 +264,61 @@ public class Language {
      */
     public static Locale getOriginalLocale() {
         return mOriginalLocale;
+    }
+
+
+    public static ArrayList<Locale> getTranslatedLocales(Context context, int comparisonStringResourceID, boolean onlyThoseSupportedByThePhone) {
+        Locale english = Locale.ENGLISH;
+
+        DisplayMetrics metrics = new DisplayMetrics();
+        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        windowManager.getDefaultDisplay().getMetrics(metrics);
+        Resources resources = context.getResources();
+        Configuration configuration = resources.getConfiguration();
+        Locale assignedLanguage = configuration.locale;
+        ArrayList<Locale> loc = new ArrayList();
+        ArrayList<String> processed = new ArrayList();
+        String englishConst = english.getLanguage();
+        if (onlyThoseSupportedByThePhone) {
+            String[] locales = resources.getAssets().getLocales();
+            for (String string : locales) {
+                if (!string.startsWith(englishConst) && !processed.contains(string)) {
+                    processed.add(string);
+                    loc.add(new Locale(string));
+                }
+            }
+        } else {
+            Locale[] locales = Locale.getAvailableLocales();
+            for (Locale locale : locales) {
+                String language = locale.getLanguage();
+                if (!locale.getLanguage().equals(englishConst) && !processed.contains(language)) {
+                    processed.add(language);
+                    loc.add(locale);
+                }
+            }
+        }
+
+        configuration.locale = english;
+        Resources res = new Resources(context.getAssets(), metrics, configuration);
+        String compareString = res.getString(comparisonStringResourceID);
+
+        ArrayList<Locale> supported = new ArrayList();
+        supported.add(english);
+
+        for (int i = 0; i < loc.size(); i++) {
+            configuration.locale = loc.get(i);
+            res = new Resources(context.getAssets(), metrics, configuration);
+            Resources res2 = new Resources(context.getAssets(), metrics, configuration);
+            String s2 = res2.getString(comparisonStringResourceID);
+
+            if (!compareString.equals(s2)) {
+                supported.add(configuration.locale);
+            }
+        }
+
+        configuration.locale = assignedLanguage;
+//        context.setLocale(assignedLanguage);
+        return supported;
     }
 
 }
