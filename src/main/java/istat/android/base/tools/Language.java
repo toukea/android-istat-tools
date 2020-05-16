@@ -100,25 +100,26 @@ public class Language {
         return autoCancellableOnAllActivitiesDestroyed;
     }
 
-    public void setLocale(String languageCode) {
-        setLocale(languageCode, false);
+    public Configuration setLocale(String languageCode) {
+        return setLocale(languageCode, false);
     }
 
-    public void setLocale(String languageCode, boolean forceUpdate) {
-        setLocale(currentForegroundActivity, languageCode, forceUpdate);
+    public Configuration setLocale(String languageCode, boolean forceUpdate) {
+        return setLocale(currentForegroundActivity, languageCode, forceUpdate);
     }
 
-    public void setLocale(Activity activity, String languageCode) {
-        setLocale(activity, languageCode, false);
+    public Configuration setLocale(Activity activity, String languageCode) {
+        return setLocale(activity, languageCode, false);
     }
 
-    public void setLocale(Activity activity, String languageCode, boolean forceUpdate) {
+    public Configuration setLocale(Activity activity, String languageCode, boolean forceUpdate) {
         this.languageToApply = languageCode;
-        Language.set(application, languageCode, forceUpdate);
+        Configuration configuration = Language.set(application, languageCode);
         if (activity != null) {
-            Language.set(activity, languageCode, forceUpdate);
+            configuration = Language.set(activity, languageCode);
             activity.recreate();
         }
+        return configuration;
     }
 
     /**
@@ -153,7 +154,7 @@ public class Language {
             } else {
                 Collections.swap(openedActivities, openedActivities.indexOf(activity), openedActivities.size() - 1);
             }
-            set(activity, languageToApply, false);
+            set(activity, languageToApply);
 
         }
 
@@ -207,11 +208,10 @@ public class Language {
      *
      * @param context      the `ContextWrapper` instance to get a `Resources` instance from
      * @param languageCode the language code in the form `[a-z]{2}` (e.g. `es`) or `[a-z]{2}-r?[A-Z]{2}` (e.g. `pt-rBR`)
-     * @param forceUpdate  whether to force an update when the default language (empty language code) is requested
      */
-    static void set(final ContextWrapper context, final String languageCode, final boolean forceUpdate) {
+    static Configuration set(final ContextWrapper context, final String languageCode) {
         // if a custom language is requested (non-empty language code) or a forced update is requested
-        if (!languageCode.equals("") || forceUpdate) {
+        if (!TextUtils.isEmpty(languageCode)) {
             try {
                 // create a new Locale instance
                 final Locale newLocale;
@@ -250,11 +250,13 @@ public class Language {
 
                     // overwrite the default Locale
                     Locale.setDefault(newLocale);
+                    return conf;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+        return context.getBaseContext().getResources().getConfiguration();
     }
 
     /**
