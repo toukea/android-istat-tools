@@ -239,14 +239,8 @@ public class Language {
 
                 if (newLocale != null) {
                     // update the app's configuration to use the new Locale
-                    final Resources resources = context.getBaseContext().getResources();
-                    final Configuration conf = resources.getConfiguration();
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                        conf.setLocale(newLocale);
-                    } else {
-                        conf.locale = newLocale;
-                    }
-                    resources.updateConfiguration(conf, resources.getDisplayMetrics());
+                    configureContext(context.getApplicationContext(), newLocale);
+                    final Configuration conf = configureContext(context, newLocale);
 
                     // overwrite the default Locale
                     Locale.setDefault(newLocale);
@@ -257,6 +251,18 @@ public class Language {
             }
         }
         return context.getBaseContext().getResources().getConfiguration();
+    }
+
+    private static Configuration configureContext(Context context, Locale newLocale) {
+        final Resources resources = context.getResources();
+        final Configuration conf = resources.getConfiguration();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            conf.setLocale(newLocale);
+        } else {
+            conf.locale = newLocale;
+        }
+        resources.updateConfiguration(conf, resources.getDisplayMetrics());
+        return conf;
     }
 
     /**
@@ -321,6 +327,13 @@ public class Language {
         configuration.locale = assignedLanguage;
 //        context.setLocale(assignedLanguage);
         return supported;
+    }
+
+    public static String localeToEmoji(Locale locale) {
+        String countryCode = locale.getLanguage();//TODO changer peu être en language
+        int firstLetter = Character.codePointAt(countryCode, 0) - 0x41 + 0x1F1E6;
+        int secondLetter = Character.codePointAt(countryCode, 1) - 0x41 + 0x1F1E6;
+        return new String(Character.toChars(firstLetter)) + new String(Character.toChars(secondLetter));
     }
 
 }
