@@ -23,14 +23,18 @@ public class PayLoad {
     }
 
     public <T> T getVariable(int index) {
+        return getVariable(index, null);
+    }
+
+    public <T> T getVariable(int index, T defaultValue) {
         if (variableArray.length <= index) {
-            return null;
+            return defaultValue;
         }
         try {
             return (T) variableArray[index];
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return defaultValue;
         }
     }
 
@@ -48,7 +52,7 @@ public class PayLoad {
         if (var == null) {
             return null;
         }
-        if (cLass.isAssignableFrom(var.getClass())) {
+        if (cLass == null || cLass.isAssignableFrom(var.getClass())) {
             return (T) var;
         } else {
             throw new IllegalArgumentException("Item at index=" + index + " has type class=" + var.getClass() + ", requested class=" + cLass);
