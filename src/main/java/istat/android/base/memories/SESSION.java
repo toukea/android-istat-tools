@@ -1,16 +1,5 @@
 package istat.android.base.memories;
 
-import istat.android.base.tools.JSON;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
@@ -20,9 +9,20 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+
+import istat.android.base.tools.JSON;
+
 public class SESSION {
     static HashMap<String, Object> SESSION_DATA = new HashMap<String, Object>();
-    static HashMap<String, Object> SESSION_TEMPORY_DATA = new HashMap<String, Object>();
+    static HashMap<String, Object> SESSION_TEMPORARY_DATA = new HashMap<String, Object>();
     static HashMap<String, Object> SESSION_SPACE = new HashMap<String, Object>() {
         /**
          *
@@ -31,11 +31,11 @@ public class SESSION {
 
         {
             put(Session.DEFAULT_NAME_SPACE, SESSION_DATA);
-            put(Session.DEFAULT_TEMPORY, SESSION_TEMPORY_DATA);
+            put(Session.DEFAULT_TEMPORY, SESSION_TEMPORARY_DATA);
         }
     };
 
-    static String KEYSET_NAME = "key_set";
+    static String KEY_SET_NAME = "key_set";
     static Session session;
     public static String CURRENT_NAME_SPACE = Session.DEFAULT_NAME_SPACE;
     private static String LAST_NAME_SPACE = Session.DEFAULT_NAME_SPACE;
@@ -112,12 +112,12 @@ public class SESSION {
 
     public static void clearValue(String name) {
         SESSION_DATA.remove(name);
-        SESSION_TEMPORY_DATA.remove(name);
+        SESSION_TEMPORARY_DATA.remove(name);
     }
 
     public static void clearAllValues() {
         SESSION_DATA.clear();
-        SESSION_TEMPORY_DATA.clear();
+        SESSION_TEMPORARY_DATA.clear();
     }
 
     public static boolean contain(Object name) {
@@ -139,7 +139,7 @@ public class SESSION {
 
     public static boolean canRetrieve(Object name) {
         return SESSION_DATA.containsKey(name)
-                || SESSION_TEMPORY_DATA.containsKey(name);
+                || SESSION_TEMPORARY_DATA.containsKey(name);
     }
 
     public static boolean saveCurrentInstance() {
@@ -282,7 +282,7 @@ public class SESSION {
     }
 
     public static boolean isEmpty() {
-        return SESSION_TEMPORY_DATA.size() > 3;
+        return SESSION_TEMPORARY_DATA.size() > 3;
     }
 
     public static void put(String name, Object value) {
@@ -303,7 +303,7 @@ public class SESSION {
     public static void put(String name, Object value, boolean percistance) {
         if (percistance)
             SESSION_DATA.put(name, value);
-        SESSION_TEMPORY_DATA.put(name, value);
+        SESSION_TEMPORARY_DATA.put(name, value);
     }
 
     public static int getInt(String name) {
@@ -358,7 +358,7 @@ public class SESSION {
         if (out != null)
             return out;
         else
-            return SESSION_TEMPORY_DATA.get(tagName);
+            return SESSION_TEMPORARY_DATA.get(tagName);
     }
 
     public static int searchInt(String name, String namespace) {
@@ -408,7 +408,7 @@ public class SESSION {
         if (out != null)
             return out;
         else
-            return SESSION_TEMPORY_DATA.get(tagName);
+            return SESSION_TEMPORARY_DATA.get(tagName);
     }
 
     public static int retrieveInt(String name) {
@@ -528,7 +528,7 @@ public class SESSION {
             @Override
             protected void onStartSession(SharedPreferences sharedP) {
 
-                String[] keySet = sharedP.getString(KEYSET_NAME, "").split(",");
+                String[] keySet = sharedP.getString(KEY_SET_NAME, "").split(",");
                 if (keySet.length > 0) {
                     for (String tmp : keySet) {
                         String value = sharedP.getString(tmp, "");
@@ -565,7 +565,7 @@ public class SESSION {
                     }
                 }
                 // -----------------------------------------------------------------
-                editor.putString(KEYSET_NAME, keySet);
+                editor.putString(KEY_SET_NAME, keySet);
                 editor.putString(TIME_FIRST_START, firstS);
                 editor.putString(TIME_LAST_START, lastS);
                 editor.putString(TIME_LAST_SAVE, lastSv);
@@ -576,7 +576,7 @@ public class SESSION {
             protected void onFinishSession(SharedPreferences sharedP) {
 
                 SESSION_DATA.clear();
-                SESSION_TEMPORY_DATA.clear();
+                SESSION_TEMPORARY_DATA.clear();
                 SESSION_SPACE.clear();
                 SESSION_SPACE.put(Session.DEFAULT_NAME_SPACE, SESSION_DATA);
                 session = null;
