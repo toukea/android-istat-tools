@@ -184,7 +184,7 @@ public class IntentRouter {
         String flags = compute(source.getStringExtra(EXTRA_INTENT_FLAGS));
 //        String action = source.getAction();
         if (istat.android.base.tools.TextUtils.isEmpty(dataUri)) {
-            dataUri = source.getStringExtra(EXTRA_INTENT_URI);
+            dataUri = compute(source.getStringExtra(EXTRA_INTENT_URI));
         }
         if (!TextUtils.isEmpty(flags)) {
             int flagsInt = istat.android.base.tools.ToolKits.Word.parseInt(flags);
