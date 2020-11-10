@@ -679,6 +679,38 @@ public final class ToolKits {
             return deleted;
         }
 
+        public static final int copyDirectory(File source, File destination) throws IOException {
+            int copied = 0;
+            File[] files = source.listFiles();
+            if (files != null) {
+                File[] var5 = files;
+                int var4 = files.length;
+                File targetFile;
+                for (int var3 = 0; var3 < var4; ++var3) {
+                    File f = var5[var3];
+                    targetFile = new File(destination, f.getName());
+                    if (f.isDirectory()) {
+                        copyDirectory(f, targetFile);
+                    }
+                    copied++;
+                    if (targetFile.isDirectory()) {
+                        continue;
+                    }
+                    if (!targetFile.getParentFile().exists()) {
+                        targetFile.getParentFile().mkdirs();
+                    }
+                    Stream.copyStream(f, targetFile);
+                }
+                copied++;
+            }
+            return copied;
+        }
+
+        public static final int moveDirectory(File source, File destination) throws IOException {
+            copyDirectory(source, destination);
+            return deleteDirectory(source);
+        }
+
         public static final String fileSize(String url) {
             try {
                 BufferedInputStream bfr = new BufferedInputStream(new FileInputStream(url));
@@ -1343,7 +1375,7 @@ public final class ToolKits {
 
         @SuppressLint("NewApi")
         public static long bufferedCopyStream(InputStream in, OutputStream ou) throws IOException {
-           return bufferedCopyStream(in, ou, true);
+            return bufferedCopyStream(in, ou, true);
         }
 
         @SuppressLint("NewApi")
@@ -1584,17 +1616,7 @@ public final class ToolKits {
         }
 
         public static final int parseInt(String s) {
-            if (TextUtils.isEmpty(s)) {
-                return 0;
-            } else if (s.trim().length() == 0) {
-                return 0;
-            } else {
-                try {
-                    return Integer.parseInt(s.trim());
-                } catch (Exception var2) {
-                    return 0;
-                }
-            }
+            return (int) parseDouble(s);
         }
 
         public static final String numberToWords(long number, Locale locale) {
@@ -1632,7 +1654,7 @@ public final class ToolKits {
         }
 
         public static final String sweetNumber(int a) {
-            return a > 9 || a < 0 ? "" + a : "0" + a;
+            return a > 9 || a <= 0 ? "" + a : "0" + a;
         }
 
         public static final String adjustNumber(double a) {

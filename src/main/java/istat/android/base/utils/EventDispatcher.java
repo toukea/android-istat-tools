@@ -94,7 +94,7 @@ public class EventDispatcher {
     }
 
     public boolean registerEventListener(EventListener listener, String... eventNames) {
-        return registerEventListener(-1, listener, (String[]) eventNames);
+        return registerEventListener(-1, listener,  eventNames);
     }
 
     public boolean registerEventListener(int priority, EventListener listener, String... eventNames) {

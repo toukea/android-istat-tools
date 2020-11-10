@@ -54,7 +54,9 @@ public class FileCache implements Cache<File> {
             // context
             cacheDir = new File(context.getCacheDir(), dirNames);
         }
-        Log.d("FileCache", "CacheDir::" + cacheDir.getAbsolutePath());
+        if (cacheDir != null) {
+            Log.d("FileCache", "CacheDir::" + cacheDir.getAbsolutePath());
+        }
     }
 
     public FileCache(Context context, File cacheDir) {
@@ -71,7 +73,7 @@ public class FileCache implements Cache<File> {
     }
 
     private void createCacheDir() {
-        if (!cacheDir.exists()) {
+        if (cacheDir != null && !cacheDir.exists()) {
             // createDirectives cache dir in your application context
             cacheDir.mkdirs();
         }
@@ -229,6 +231,7 @@ public class FileCache implements Cache<File> {
         this.entryGenerator = entryGenerator;
     }
 
+    @Deprecated
     public File getCacheDir() {
         this.createCacheDir();
         return this.cacheDir;

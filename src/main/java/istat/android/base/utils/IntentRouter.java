@@ -403,12 +403,13 @@ public class IntentRouter {
     }
 
     public static abstract class DynamicPathIntentRoutHandler implements UriIntentRoutHandler {
-        HashMap<String, String> activityClassNameMap = new HashMap<>();
+        final HashMap<String, String> activityClassNameMap = new HashMap<>();
 
         public DynamicPathIntentRoutHandler(Context context) {
-            PackageManager pm = context.getPackageManager();
-            PackageInfo packageInfo;
             try {
+                PackageManager pm = context.getPackageManager();
+                PackageInfo packageInfo;
+
                 packageInfo = pm.getPackageInfo(context.getPackageName(), PackageManager.GET_ACTIVITIES);
                 String[] split;
                 for (ActivityInfo info : packageInfo.activities) {

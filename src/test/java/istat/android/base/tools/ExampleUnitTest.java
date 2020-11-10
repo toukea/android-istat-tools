@@ -7,8 +7,10 @@ import com.google.gson.Gson;
 
 import org.junit.Test;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -148,5 +150,20 @@ public class ExampleUnitTest {
         System.out.println("verified=" + verified);
 
 
+    }
+
+    @Test
+    public void copyDirectoryTest() throws NoSuchAlgorithmException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, InvalidKeySpecException, BadPaddingException, SignatureException, IOException {
+        File source = new File("/home/istat/Temp/qproject/");
+        File destination = new File("/home/istat/Temp/qproject-copy/");
+        int copiedCount = ToolKits.FileKits.copyDirectory(source, destination);
+        assertTrue(copiedCount > 0);
+    }
+    @Test
+    public void moveDirectoryTest() throws NoSuchAlgorithmException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, InvalidKeySpecException, BadPaddingException, SignatureException, IOException {
+        File source = new File("/home/istat/Temp/qproject-copy/");
+        File destination = new File("/home/istat/Temp/qproject-copy-2/");
+        int copiedCount = ToolKits.FileKits.moveDirectory(source, destination);
+        assertTrue(copiedCount > 0);
     }
 }

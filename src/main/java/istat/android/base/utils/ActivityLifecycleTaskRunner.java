@@ -8,6 +8,7 @@ import android.os.Looper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 public class ActivityLifecycleTaskRunner {
@@ -148,7 +149,23 @@ public class ActivityLifecycleTaskRunner {
         return 0;
     }
 
-    public static int unplanAll(ActivityTak activityTak) {
+    public static int unPlanAll(ActivityTak activityTak) {
+        if (instance == null) {
+            return 0;
+        }
+        for (Map.Entry<String, List<TaskDelayPair>> entry : instance.taskQueue.entrySet()) {
+            for (TaskDelayPair pair : entry.getValue()) {
+                if (pair.activityTask == activityTak) {
+                    entry.getValue().remove(pair);
+                    break;
+                }
+            }
+        }
+        //TODO retourne le mombre de tache qui on été déplanifié.
+        return 0;
+    }
+
+    public static int unPlanAll(Class<? extends Activity> target, ActivityTak activityTak) {
         if (instance == null) {
             return 0;
         }
@@ -156,15 +173,7 @@ public class ActivityLifecycleTaskRunner {
         return 0;
     }
 
-    public static int unplanAll(Class<? extends Activity> target, ActivityTak activityTak) {
-        if (instance == null) {
-            return 0;
-        }
-        //TODO retourne le mombre de tache qui on été déplanifié.
-        return 0;
-    }
-
-    public static boolean unplan(Class<? extends Activity> target, int when, ActivityTak activityTak) {
+    public static boolean unPlan(Class<? extends Activity> target, int when, ActivityTak activityTak) {
         if (instance == null) {
             return false;
         }
@@ -182,7 +191,7 @@ public class ActivityLifecycleTaskRunner {
             taskQueue.put(entryName, pairs);
         }
         pairs.add(pair);
-        return false;
+        return true;
     }
 
     class TaskDelayPair {
