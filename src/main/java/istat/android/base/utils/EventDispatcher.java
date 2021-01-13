@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class EventDispatcher {
     final static String EVENT_ALL = "event_dispatcher_all";
-    ConcurrentHashMap<String, List<EventListener>> eventNameListenerMap = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<String, List<EventListener>> eventNameListenerMap = new ConcurrentHashMap<>();
     static EventDispatcher instance;
 
     public static EventDispatcher getInstance() {
@@ -111,8 +111,6 @@ public class EventDispatcher {
                 } else {
                     listeners.add(priority, listener);
                 }
-            } else {
-                return false;
             }
         }
         return true;

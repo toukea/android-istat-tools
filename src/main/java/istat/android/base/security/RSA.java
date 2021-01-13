@@ -89,14 +89,15 @@ public class RSA {
         return keyGen.generateKeyPair();
     }
 
-    public static KeyPair generateKeyPair(InputStream JavaKeyStoreInputStream) throws Exception {
+    public static KeyPair generateKeyPair(InputStream JavaKeyStoreInputStream, String password) throws Exception {
         //Generated with:
         //  keytool -genkeypair -alias mykey -storepass s3cr3t -keypass s3cr3t -keyalg RSA -keystore keystore.jks
+        char[] passwordChars = password!=null? password.toCharArray():new char[]{};
 
         KeyStore keyStore = KeyStore.getInstance("JCEKS"); // ou "PKCS12"
-        keyStore.load(JavaKeyStoreInputStream, "s3cr3t".toCharArray());   //Keystore password
+        keyStore.load(JavaKeyStoreInputStream, passwordChars);   //Keystore password
         KeyStore.PasswordProtection keyPassword =       //Key password
-                new KeyStore.PasswordProtection("s3cr3t".toCharArray());
+                new KeyStore.PasswordProtection(passwordChars);
 
         KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry) keyStore.getEntry("mykey", keyPassword);
 

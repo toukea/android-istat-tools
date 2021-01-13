@@ -153,16 +153,21 @@ public class ActivityLifecycleTaskRunner {
         if (instance == null) {
             return 0;
         }
+        int output = 0;
+        maiLoop:
         for (Map.Entry<String, List<TaskDelayPair>> entry : instance.taskQueue.entrySet()) {
+            secondLoop:
             for (TaskDelayPair pair : entry.getValue()) {
                 if (pair.activityTask == activityTak) {
-                    entry.getValue().remove(pair);
-                    break;
+                    if (entry.getValue().remove(pair)) {
+                        output++;
+                    }
+                    break secondLoop;
                 }
             }
         }
         //TODO retourne le mombre de tache qui on été déplanifié.
-        return 0;
+        return output;
     }
 
     public static int unPlanAll(Class<? extends Activity> target, ActivityTak activityTak) {
