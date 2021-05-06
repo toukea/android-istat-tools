@@ -92,7 +92,7 @@ public class ImageLoader {
         this.context = context;
         // Creates a thread pool that reuses a fixed number of
         // threads operating off a shared unbounded queue.
-        executorService = Executors.newFixedThreadPool(5);
+        this.executorService = Executors.newFixedThreadPool(5);
         this.errorBitmapHolder = errorIcon;
         this.progressionBitmapHolder = progressIcon;
         memoryCache.setEntryGenerator(new EntryGenerator() {
@@ -115,21 +115,35 @@ public class ImageLoader {
         this.imageQuality = imageQuality;
     }
 
+    Thread loadErrorIconPlaceHolderThread, loadProgressionIconPlaceHolderThread;
+
     //TODO essayer d'éviter les OutOfMemory au chargement de des icon INT
-    public void setErrorIcon(int icon) {
+    public void setErrorIcon(final Integer icon) {
         if (icon == 0) {
             errorBitmapHolder = null;
             return;
         }
-        errorBitmapHolder = BitmapFactory.decodeResource(getContext().getResources(), icon);
+        (loadErrorIconPlaceHolderThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                errorBitmapHolder = BitmapFactory.decodeResource(getContext().getResources(), icon);
+                loadErrorIconPlaceHolderThread = null;
+            }
+        })).start();
     }
 
-    public void setProgressIcon(int icon) {
+    public void setProgressIcon(final Integer icon) {
         if (icon == 0) {
             progressionBitmapHolder = null;
             return;
         }
-        progressionBitmapHolder = BitmapFactory.decodeResource(getContext().getResources(), icon);
+        (loadProgressionIconPlaceHolderThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                progressionBitmapHolder = BitmapFactory.decodeResource(getContext().getResources(), icon);
+                loadProgressionIconPlaceHolderThread = null;
+            }
+        })).start();
     }
 
     public void setErrorIcon(Bitmap icon) {
@@ -226,6 +240,12 @@ public class ImageLoader {
         @Override
         public void run() {
             try {
+                if (loadErrorIconPlaceHolderThread != null && loadErrorIconPlaceHolderThread.isAlive()) {
+                    loadErrorIconPlaceHolderThread.join();
+                }
+                if (loadProgressionIconPlaceHolderThread != null && loadProgressionIconPlaceHolderThread.isAlive()) {
+                    loadProgressionIconPlaceHolderThread.join();
+                }
                 // Check if image already downloaded
                 if (imageViewReused(photoToLoad))
                     return;

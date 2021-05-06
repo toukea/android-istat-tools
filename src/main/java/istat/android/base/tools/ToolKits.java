@@ -17,6 +17,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.pm.Signature;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Point;
@@ -32,6 +33,7 @@ import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.provider.Settings;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Display;
 import android.view.Surface;
 import android.view.View;
@@ -297,6 +299,12 @@ public final class ToolKits {
     }
 
     public static final class FileKits {
+
+        public enum ScanUsage {
+            IGNORE,
+            TARGET
+        }
+
         public FileKits() {
         }
 
@@ -357,14 +365,14 @@ public final class ToolKits {
         }
 
         @SuppressLint("NewApi")
-        public static List<File> findFileWithExtension(Context context, String[] ignores, String... extend) {
+        public static List<File> findFileWithExtension(Context context, Pair<String[], ScanUsage> pathListUsagePair, String... extend) {
             try {
                 return findFileWithExtension(context, new Decoder<File, String>() {
                     @Override
                     public File decode(String s) throws Exception {
                         return new File(s);
                     }
-                }, null, ignores, extend);
+                }, null, pathListUsagePair, extend);
             } catch (Exception e) {
                 e.printStackTrace();
                 return new ArrayList<>();
@@ -377,7 +385,15 @@ public final class ToolKits {
          */
         //TODO remplacer le nom de cette methode avec findContentWithFileExtension
         @SuppressLint("NewApi")
-        public static <T> List<T> findFileWithExtension(Context context, Decoder<T, String> decoder, String sortOrder, String[] ignoredDir, String... extend) throws Exception {
+        public static <T> List<T> findFileWithExtension(Context context, Decoder<T, String> decoder, String sortOrder, Pair<String[], ScanUsage> pathListUsagePair, String... extend) throws Exception {
+            String[] targetDirs = null, ignoredDir = null;
+            if (pathListUsagePair != null) {
+                if (pathListUsagePair.second == null || pathListUsagePair.second == ScanUsage.IGNORE) {
+                    ignoredDir = pathListUsagePair.first;
+                } else {
+                    targetDirs = pathListUsagePair.first;
+                }
+            }
             List<T> out = new ArrayList();
             if (extend == null || extend.length == 0)
                 return out;
@@ -396,6 +412,19 @@ public final class ToolKits {
                     extend[i] = "%" + (extend[i].startsWith(".") ? "" : ".") + extend[i];
                 }
             }
+            String selectionPathToTarget = null;
+            if (targetDirs != null && targetDirs.length >= 1) {
+                for (int i = 0; i < targetDirs.length; i++) {
+                    if (selectionPathToTarget == null) {
+                        selectionPathToTarget = MediaStore.Files.FileColumns.DATA + " LIKE ?";
+                    } else {
+                        selectionPathToTarget += "OR " + MediaStore.Files.FileColumns.DATA
+                                + " LIKE ?";
+                    }
+
+                    targetDirs[i] = targetDirs[i] + "%";
+                }
+            }
             String selectionIgnore = null;
             if (ignoredDir != null && ignoredDir.length >= 1) {
                 for (int i = 0; i < ignoredDir.length; i++) {
@@ -412,6 +441,9 @@ public final class ToolKits {
             String selection = "";
             if (!istat.android.base.tools.TextUtils.isEmpty(selectionInclude)) {
                 selection += "(" + selectionInclude + ")";
+            }
+            if (!istat.android.base.tools.TextUtils.isEmpty(selectionPathToTarget)) {
+                selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + "(" + selectionPathToTarget + ")";
             }
             if (!istat.android.base.tools.TextUtils.isEmpty(selectionIgnore)) {
                 selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + "(" + selectionIgnore + ")";
@@ -438,12 +470,107 @@ public final class ToolKits {
             return out;
         }
 
-        public static <T> List<T> findFiles(Context context, Decoder<T, String> decoder, String[] ignoredDir, String[] nameContent, String... extend) throws Exception {
-            return findFiles(context, decoder, null, ignoredDir, nameContent, extend);
+        @SuppressLint("NewApi")
+        public static <T> List<T> findFileWithMediaType(Context context, Decoder<T, String> decoder, String sortOrder, Pair<String[], ScanUsage> pathListUsagePair, String... extend) throws Exception {
+            String[] targetDirs = null, ignoredDir = null;
+            if (pathListUsagePair != null) {
+                if (pathListUsagePair.second == null || pathListUsagePair.second == ScanUsage.IGNORE) {
+                    ignoredDir = pathListUsagePair.first;
+                } else {
+                    targetDirs = pathListUsagePair.first;
+                }
+            }
+            List<T> out = new ArrayList();
+            if (extend == null || extend.length == 0)
+                return out;
+            ContentResolver cr = context.getContentResolver();
+            Uri uri = MediaStore.Files.getContentUri("external");
+            String[] projection = new String[]{MediaStore.Files.FileColumns.MIME_TYPE};
+            String selectionInclude = null;
+            if (extend.length >= 1) {
+                for (int i = 0; i < extend.length; i++) {
+                    if (selectionInclude == null) {
+                        selectionInclude = MediaStore.Files.FileColumns.MIME_TYPE + " = ?";
+                    } else {
+                        selectionInclude += "OR " + MediaStore.Files.FileColumns.MIME_TYPE
+                                + " = ?";
+                    }
+                    extend[i] = extend[i];
+                }
+            }
+            String selectionPathToTarget = null;
+            if (targetDirs != null && targetDirs.length >= 1) {
+                for (int i = 0; i < targetDirs.length; i++) {
+                    if (selectionPathToTarget == null) {
+                        selectionPathToTarget = MediaStore.Files.FileColumns.DATA + " LIKE ?";
+                    } else {
+                        selectionPathToTarget += "OR " + MediaStore.Files.FileColumns.DATA
+                                + " LIKE ?";
+                    }
+
+                    targetDirs[i] = targetDirs[i] + "%";
+                }
+            }
+            String selectionIgnore = null;
+            if (ignoredDir != null && ignoredDir.length >= 1) {
+                for (int i = 0; i < ignoredDir.length; i++) {
+                    if (selectionIgnore == null) {
+                        selectionIgnore = MediaStore.Files.FileColumns.MIME_TYPE + " != ?";
+                    } else {
+                        selectionIgnore += "AND " + MediaStore.Files.FileColumns.MIME_TYPE
+                                + " != ?";
+                    }
+
+                    ignoredDir[i] = ignoredDir[i];
+                }
+            }
+            String selection = "";
+            if (!istat.android.base.tools.TextUtils.isEmpty(selectionInclude)) {
+                selection += "(" + selectionInclude + ")";
+            }
+            if (!istat.android.base.tools.TextUtils.isEmpty(selectionPathToTarget)) {
+                selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + "(" + selectionPathToTarget + ")";
+            }
+            if (!istat.android.base.tools.TextUtils.isEmpty(selectionIgnore)) {
+                selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + "(" + selectionIgnore + ")";
+            }
+            List<String> argsList = new ArrayList<>();
+            if (extend != null && extend.length > 0) {
+                argsList.addAll(Arrays.asList(extend));
+            }
+            if (ignoredDir != null && ignoredDir.length > 0) {
+                argsList.addAll(Arrays.asList(ignoredDir));
+            }
+            Cursor allNonMediaFiles = cr.query(uri, projection, selection,
+                    argsList.toArray(new String[argsList.size()]), sortOrder);
+            if (allNonMediaFiles != null && allNonMediaFiles.getCount() > 0) {
+                T entity;
+                while (allNonMediaFiles.moveToNext()) {
+                    entity = decoder.decode(allNonMediaFiles.getString(0));
+                    if (entity != null) {
+                        out.add(entity);
+                    }
+                }
+            }
+            allNonMediaFiles.close();
+            return out;
+        }
+
+
+        public static <T> List<T> findFiles(Context context, Decoder<T, String> decoder, Pair<String[], ScanUsage> pathsUsagePair, String[] nameContent, String... extend) throws Exception {
+            return findFiles(context, decoder, null, pathsUsagePair, nameContent, extend);
         }
 
         @SuppressLint("NewApi")
-        public static <T> List<T> findFiles(Context context, Decoder<T, String> decoder, String sortOrder, String[] ignoredDir, String[] nameContent, String... extend) throws Exception {
+        public static <T> List<T> findFiles(Context context, Decoder<T, String> decoder, String sortOrder, Pair<String[], ScanUsage> pathListUsagePair, String[] nameContent, String... extend) throws Exception {
+            String[] targetDirs = null, ignoredDir = null;
+            if (pathListUsagePair != null) {
+                if (pathListUsagePair.second == null || pathListUsagePair.second == ScanUsage.IGNORE) {
+                    ignoredDir = pathListUsagePair.first;
+                } else {
+                    targetDirs = pathListUsagePair.first;
+                }
+            }
             List<T> out = new ArrayList();
             if (extend == null || extend.length == 0)
                 return out;
@@ -476,6 +603,19 @@ public final class ToolKits {
                     }
                 }
             }
+            String selectionPathToTarget = null;
+            if (targetDirs != null && targetDirs.length >= 1) {
+                for (int i = 0; i < targetDirs.length; i++) {
+                    if (selectionPathToTarget == null) {
+                        selectionPathToTarget = MediaStore.Files.FileColumns.DATA + " LIKE ?";
+                    } else {
+                        selectionPathToTarget += "OR " + MediaStore.Files.FileColumns.DATA
+                                + " LIKE ?";
+                    }
+
+                    targetDirs[i] = targetDirs[i] + "%";
+                }
+            }
             String selectionIgnore = null;
             if (ignoredDir != null && ignoredDir.length >= 1) {
                 for (int i = 0; i < ignoredDir.length; i++) {
@@ -495,6 +635,9 @@ public final class ToolKits {
             }
             if (!istat.android.base.tools.TextUtils.isEmpty(selectionNameContent)) {
                 selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + "(" + selectionNameContent + ")";
+            }
+            if (!istat.android.base.tools.TextUtils.isEmpty(selectionPathToTarget)) {
+                selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + "(" + selectionPathToTarget + ")";
             }
             if (!istat.android.base.tools.TextUtils.isEmpty(selectionIgnore)) {
                 selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + "(" + selectionIgnore + ")";
@@ -547,11 +690,11 @@ public final class ToolKits {
             writer.close();
         }
 
-        public static final String fileExtention(File file) {
-            return fileExtention(file.getName());
+        public static final String fileExtension(File file) {
+            return fileExtension(file.getName());
         }
 
-        public static final String fileExtention(String file) {
+        public static final String fileExtension(String file) {
             int index = file.lastIndexOf(".") + 1;
             return index > 0 && file.length() > index ? file.substring(index) : "";
         }
@@ -1015,6 +1158,12 @@ public final class ToolKits {
         public Screen() {
         }
 
+        public static boolean isTablet(Context context) {
+            return (context.getResources().getConfiguration().screenLayout
+                    & Configuration.SCREENLAYOUT_SIZE_MASK)
+                    >= Configuration.SCREENLAYOUT_SIZE_LARGE;
+        }
+
         public final static boolean isScreenVisible(View v) {
             Rect rect = new Rect();
             View root = v.getRootView();
@@ -1022,6 +1171,12 @@ public final class ToolKits {
             return v.getLocalVisibleRect(rect);
         }
 
+        /**
+         * Lock the screen orientation
+         *
+         * @param context
+         * @return current screen orientation in case you will have to restore it. using #Context#setRequestedOrientation]
+         */
         public static int setOrientationLocked(Activity context) {
             if (context == null) {
                 return ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;

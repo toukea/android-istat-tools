@@ -315,7 +315,7 @@ public class Language {
 
         for (int i = 0; i < loc.size(); i++) {
             configuration.locale = loc.get(i);
-            res = new Resources(context.getAssets(), metrics, configuration);
+//            res = new Resources(context.getAssets(), metrics, configuration);
             Resources res2 = new Resources(context.getAssets(), metrics, configuration);
             String s2 = res2.getString(comparisonStringResourceID);
 

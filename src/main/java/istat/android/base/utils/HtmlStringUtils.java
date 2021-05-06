@@ -1,11 +1,7 @@
 package istat.android.base.utils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class HtmlStringUtils {
     private static final HashMap<Character, String> htmlEncodeChars = new HashMap<>();
@@ -270,6 +266,7 @@ public class HtmlStringUtils {
         htmlEncodeChars.put('\u2663', "&clubs;");
         htmlEncodeChars.put('\u2665', "&hearts;");
         htmlEncodeChars.put('\u2666', "&diams;");
+        htmlEncodeChars.put('\n', "<br/>");
     }
 
     private HtmlStringUtils() {

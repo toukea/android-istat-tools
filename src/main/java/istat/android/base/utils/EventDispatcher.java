@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
+//TODO voir comment introduire une notion de priorité dans l'ajout d'event.
 public class EventDispatcher {
     final static String EVENT_ALL = "event_dispatcher_all";
     final ConcurrentHashMap<String, List<EventListener>> eventNameListenerMap = new ConcurrentHashMap<>();
@@ -80,7 +80,7 @@ public class EventDispatcher {
     }
 
 
-    private List<EventListener> getEventListeners(String eventName) {
+    public List<EventListener> getEventListeners(String eventName) {
         List<EventListener> listeners = new ArrayList();
         List<EventListener> dispatchAll = getEventDispatcherListByEventName(EVENT_ALL);
         List<EventListener> dispatchEvents = getEventDispatcherListByEventName(eventName);
