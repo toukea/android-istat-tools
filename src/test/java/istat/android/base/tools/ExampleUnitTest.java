@@ -28,6 +28,7 @@ import istat.android.base.security.RSA;
 import istat.android.base.security.SimpleCrypto;
 import istat.android.base.utils.HtmlStringUtils;
 import istat.android.base.utils.ListWrapper;
+import istat.android.base.utils.PayLoad;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -38,6 +39,15 @@ import static org.junit.Assert.assertTrue;
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
 public class ExampleUnitTest {
+
+    @Test
+    public void subPayLoadTest() {
+        PayLoad payLoad = new PayLoad(new Object[]{1,2,3,4});
+        PayLoad subPayLoad = payLoad.subPayload(2);
+        assertTrue(subPayLoad.length() == 2);
+        assertTrue(subPayLoad.getIntVariable(0) == 3);
+        assertTrue(subPayLoad.getIntVariable(1) == 4);
+    }
 
     @Test
     public void htmlEcapeTest() {

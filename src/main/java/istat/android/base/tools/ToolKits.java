@@ -471,7 +471,7 @@ public final class ToolKits {
         }
 
         @SuppressLint("NewApi")
-        public static <T> List<T> findFileWithMediaType(Context context, Decoder<T, String> decoder, String sortOrder, Pair<String[], ScanUsage> pathListUsagePair, String... extend) throws Exception {
+        public static <T> List<T> findFileWithMediaType(Context context, Decoder<T, String> decoder, String sortOrder, Pair<String[], ScanUsage> pathListUsagePair, String... mimeTypes) throws Exception {
             String[] targetDirs = null, ignoredDir = null;
             if (pathListUsagePair != null) {
                 if (pathListUsagePair.second == null || pathListUsagePair.second == ScanUsage.IGNORE) {
@@ -481,21 +481,21 @@ public final class ToolKits {
                 }
             }
             List<T> out = new ArrayList();
-            if (extend == null || extend.length == 0)
+            if (mimeTypes == null || mimeTypes.length == 0)
                 return out;
             ContentResolver cr = context.getContentResolver();
             Uri uri = MediaStore.Files.getContentUri("external");
-            String[] projection = new String[]{MediaStore.Files.FileColumns.MIME_TYPE};
+            String[] projection = new String[]{MediaStore.Files.FileColumns.DATA};
             String selectionInclude = null;
-            if (extend.length >= 1) {
-                for (int i = 0; i < extend.length; i++) {
+            if (mimeTypes.length >= 1) {
+                for (int i = 0; i < mimeTypes.length; i++) {
                     if (selectionInclude == null) {
                         selectionInclude = MediaStore.Files.FileColumns.MIME_TYPE + " = ?";
                     } else {
                         selectionInclude += "OR " + MediaStore.Files.FileColumns.MIME_TYPE
                                 + " = ?";
                     }
-                    extend[i] = extend[i];
+                    mimeTypes[i] = mimeTypes[i];
                 }
             }
             String selectionPathToTarget = null;
@@ -535,8 +535,8 @@ public final class ToolKits {
                 selection += (istat.android.base.tools.TextUtils.isEmpty(selection) ? "" : " AND ") + "(" + selectionIgnore + ")";
             }
             List<String> argsList = new ArrayList<>();
-            if (extend != null && extend.length > 0) {
-                argsList.addAll(Arrays.asList(extend));
+            if (mimeTypes != null && mimeTypes.length > 0) {
+                argsList.addAll(Arrays.asList(mimeTypes));
             }
             if (ignoredDir != null && ignoredDir.length > 0) {
                 argsList.addAll(Arrays.asList(ignoredDir));

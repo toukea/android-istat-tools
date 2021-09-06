@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
@@ -170,6 +171,11 @@ public class FileCache implements Cache<File> {
         }
         createCacheDir();
         return this;
+    }
+
+    public File createTempFile(String prefix, String suffix) throws IOException {
+        File tempFile = File.createTempFile(prefix, suffix, getRootDir());
+        return tempFile;
     }
 
     public static boolean deleteDir(File dir) {

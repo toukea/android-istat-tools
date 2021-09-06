@@ -281,7 +281,7 @@ public class HtmlStringUtils {
         if (null == source) {
             return null;
         }
-
+        source = source.replaceAll("</?[^>/]*>", "");
         if (null == encodingTable) {
             return source;
         }

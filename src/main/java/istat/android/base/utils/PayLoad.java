@@ -160,4 +160,17 @@ public class PayLoad {
     public static PayLoad from(Object... vars) {
         return new PayLoad(vars);
     }
+
+    public PayLoad subPayload(int start) {
+        if (start < this.length()) {
+            Object[] vars = new Object[length() - start];
+            int varIndex = 0;
+            for (int index = start; index < length(); index++) {
+                vars[varIndex] = this.variableArray[index];
+                varIndex++;
+            }
+            return new PayLoad(vars);
+        }
+        return PayLoad.empty(0);
+    }
 }
