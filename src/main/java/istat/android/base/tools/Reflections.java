@@ -31,20 +31,20 @@ public class Reflections {
     }
 
     public static <T> T getFieldValue(Object source, String fieldName, boolean includePrivate, boolean includeSuper, boolean acceptStatic) throws IllegalAccessException {
-        List<Field> fields=getAllFieldFields(source.getClass(),includePrivate,includeSuper,acceptStatic);
-        for(Field field: fields){
-            if(field.getName().equals(fieldName)){
+        List<Field> fields = getAllFieldFields(source.getClass(), includePrivate, includeSuper, acceptStatic);
+        for (Field field : fields) {
+            if (field.getName().equals(fieldName)) {
                 field.setAccessible(true);
-                return (T)field.get(source);
+                return (T) field.get(source);
             }
         }
         return null;
     }
 
     public static boolean setFieldValue(Object source, String fieldName, Object value, boolean includePrivate, boolean includeSuper, boolean acceptStatic) throws IllegalAccessException {
-        List<Field> fields=getAllFieldFields(source.getClass(),includePrivate,includeSuper,acceptStatic);
-        for(Field field: fields){
-            if(field.getName().equals(fieldName)){
+        List<Field> fields = getAllFieldFields(source.getClass(), includePrivate, includeSuper, acceptStatic);
+        for (Field field : fields) {
+            if (field.getName().equals(fieldName)) {
                 field.setAccessible(true);
                 field.set(source, value);
                 return true;
@@ -68,6 +68,20 @@ public class Reflections {
     public static <T> Type getGenericType(Class<T> baseClass, int index) {
         // To make it use generics without supplying the class type
         Type type = baseClass.getGenericSuperclass();
+
+        while (!(type instanceof ParameterizedType)) {
+            if (type instanceof ParameterizedType) {
+                type = ((Class<?>) ((ParameterizedType) type).getRawType()).getGenericSuperclass();
+            } else {
+                type = ((Class<?>) type).getGenericSuperclass();
+            }
+        }
+        return ((ParameterizedType) type).getActualTypeArguments()[index];
+    }
+
+    public static <T> Type getGenericInterfaceType(Class<T> baseClass, int interfaceIndex, int index) {
+        // To make it use generics without supplying the class type
+        Type type = baseClass.getGenericInterfaces()[interfaceIndex];
 
         while (!(type instanceof ParameterizedType)) {
             if (type instanceof ParameterizedType) {

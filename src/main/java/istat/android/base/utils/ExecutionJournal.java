@@ -13,7 +13,7 @@ public class ExecutionJournal<Data> {
             STATE_FAILED = 111;
     String destinationPath;
     List<Data> data = new ArrayList<>();
-    final SparseArray<Exception> errorMap = new SparseArray<>();
+    final SparseArray<Throwable> errorMap = new SparseArray<>();
 
     ExecutionJournal() {
 
@@ -55,7 +55,7 @@ public class ExecutionJournal<Data> {
         return errorMap.size() > 0;
     }
 
-    public Exception getError(int index) {
+    public Throwable getError(int index) {
         return errorMap.get(index);
     }
 
