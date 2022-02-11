@@ -1,5 +1,7 @@
 package istat.android.base.utils;
 
+import static istat.android.base.tools.Bitmaps.getBitmapFromPath;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -32,8 +34,6 @@ import istat.android.base.memories.FileCache;
 import istat.android.base.memories.MemoryCache;
 import istat.android.base.tools.Bitmaps;
 import istat.android.base.tools.ToolKits;
-
-import static istat.android.base.tools.Bitmaps.getBitmapFromPath;
 
 /*
  * Copyright (C) 2014 Istat Dev.
@@ -268,9 +268,14 @@ public class ImageLoader {
                 // BitmapDisplayer run method will call
                 handler.post(bd);
 
-            } catch (Throwable th) {
+            } catch (final Throwable th) {
                 th.printStackTrace();
-                notifyImageLoadError(photoToLoad, loadListener, th);
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        notifyImageLoadError(photoToLoad, loadListener, th);
+                    }
+                });
             }
         }
     }
@@ -372,6 +377,7 @@ public class ImageLoader {
             Bitmap bitmap;
             InputStream is = resourceConnectionHandler.onConnect(url);
             if (is == null) {
+                Log.e(TAG, "Null inputStream found for url=" + url);
                 return null;
             }
             if (cachedFile != null) {
@@ -541,6 +547,18 @@ public class ImageLoader {
         }
     }
 
+    public void clearCache(String entryName) {
+        if (fileCache != null) {
+            File cachedFile = fileCache.get(entryName);
+            if (cachedFile != null) {
+                cachedFile.delete();
+            }
+        }
+        if (memoryCache != null) {
+            memoryCache.remove(entryName);
+        }
+    }
+
     public void clearCache() {
         // Clear cache directory downloaded images and stored data in maps
         clearMemoryCache();
@@ -675,7 +693,7 @@ public class ImageLoader {
                 listener.onLoadCompleted(photoToLoad, bitmap != null);
             }
         } else {
-            notifyImageLoadError(photoToLoad, listener, new IOException("Unable to load image from: " + photoToLoad.url));
+            notifyImageLoadError(photoToLoad, listener, new IOException("Null Bitmap: Unable to load image from: " + photoToLoad.url));
         }
 
     }

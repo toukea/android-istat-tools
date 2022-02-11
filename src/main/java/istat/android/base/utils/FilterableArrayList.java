@@ -16,7 +16,7 @@ public class FilterableArrayList<T> extends ArrayList<T> implements Filterable<T
     Filter<T> filter;
 
     public FilterableArrayList() {
-        this(null);
+        this(new ArrayList<T>());
     }
 
     public FilterableArrayList(Collection<T> collection) {
@@ -127,5 +127,9 @@ public class FilterableArrayList<T> extends ArrayList<T> implements Filterable<T
     public void clear() {
         this.fullContent.clear();
         super.clear();
+    }
+
+    public int fullContentSize() {
+        return fullContent.size();
     }
 }

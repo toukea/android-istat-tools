@@ -149,10 +149,10 @@ public class ExampleUnitTest {
         KeyPair keyPair = RSA.generateKeyPair(512);
         String original = "papa est parti au travail !";
         System.out.println("original=" + original);
-        byte[] encryptedBytes = RSA.encrypt(original, keyPair.getPublic());
+        byte[] encryptedBytes = RSA.encryptString(original, keyPair.getPublic());
         String encryptedString = Base64.encodeToString(encryptedBytes, Base64.NO_WRAP);
         System.out.println("encrypted64=" + encryptedString);
-        String decryptString = RSA.decrypt(Base64.decode(encryptedString, Base64.NO_WRAP), keyPair.getPrivate());
+        String decryptString = RSA.decryptToString(Base64.decode(encryptedString, Base64.NO_WRAP), keyPair.getPrivate());
         System.out.println("decrypted=" + decryptString);
         byte[] signature = RSA.sign(original.getBytes(), keyPair.getPrivate());
         System.out.println(Base64.encodeToString(signature, Base64.NO_WRAP));

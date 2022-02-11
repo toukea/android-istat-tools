@@ -46,7 +46,7 @@ public class Preferences {
     }
 
     public void save(String key, String value) {
-        SavePreferences(this.context, this.file, key, value, this.mode);
+        savePreferences(this.context, this.file, key, value, this.mode);
     }
 
     public void save(String key, int value) {
@@ -72,68 +72,73 @@ public class Preferences {
     public void save(String key, Object value) {
         Gson gson = new Gson();
         String savedValue = gson.toJson(value);
-        SavePreferences(this.context, this.file, key, savedValue, this.mode);
+        savePreferences(this.context, this.file, key, savedValue, this.mode);
     }
 
     public <T> T load(String key, Class<T> cLass) {
-        Gson gson = new Gson();
-        String jsonString = LoadPreferences(this.context, this.file, key, null, this.mode);
+        String jsonString = loadPreferences(this.context, this.file, key, null, this.mode);
         if (TextUtils.isEmpty(jsonString)) {
             return null;
         }
+        Gson gson = new Gson();
         return gson.fromJson(jsonString, cLass);
     }
 
     public String load(String key) {
-        return LoadPreferences(this.context, this.file, key,  null, this.mode);
+        return loadPreferences(this.context, this.file, key, null, this.mode);
     }
 
-    public String load(String key, String deflt) {
-        return LoadPreferences(this.context, this.file, key, deflt, this.mode);
+    public String load(String key, String defaultValue) {
+        return loadPreferences(this.context, this.file, key, defaultValue, this.mode);
     }
 
-    public int loadInt(String key, int deflt) {
+    public int loadInt(String key, int defaultValue) {
         try {
-            return Integer.valueOf(LoadPreferences(this.context, this.file, key, "" + deflt, this.mode)).intValue();
+            return Integer.valueOf(loadPreferences(this.context, this.file, key, "" + defaultValue, this.mode)).intValue();
         } catch (Exception var4) {
-            return deflt;
+            return defaultValue;
         }
     }
 
-    public long loadLong(String key, long deflt) {
+    public long loadLong(String key, long defaultValue) {
         try {
-            return Long.valueOf(LoadPreferences(this.context, this.file, key, "" + deflt, this.mode)).longValue();
+            return Long.valueOf(loadPreferences(this.context, this.file, key, "" + defaultValue, this.mode)).longValue();
         } catch (Exception var5) {
-            return deflt;
+            return defaultValue;
         }
     }
 
-    public float loadFloat(String key, float deflt) {
+    public float loadFloat(String key, float defaultValue) {
         try {
-            return (float) Integer.valueOf(LoadPreferences(this.context, this.file, key, "" + deflt, this.mode)).intValue();
+            return (float) Float.valueOf(loadPreferences(this.context, this.file, key, "" + defaultValue, this.mode)).intValue();
         } catch (Exception var4) {
-            return deflt;
+            return defaultValue;
         }
     }
 
-    public double loadDouble(String key, double deflt) {
+    public double loadDouble(String key, double defaultValue) {
         try {
-            return (double) Integer.valueOf(LoadPreferences(this.context, this.file, key, "" + deflt, this.mode)).intValue();
+            return Double.valueOf(loadPreferences(this.context, this.file, key, "" + defaultValue, this.mode)).intValue();
         } catch (Exception var5) {
-            return deflt;
+            return defaultValue;
         }
     }
 
-    public boolean loadBoolean(String key, boolean deflt) {
+    public boolean loadBoolean(String key, boolean defaultValue) {
         try {
-            return Boolean.valueOf(LoadPreferences(this.context, this.file, key, "" + deflt, this.mode)).booleanValue();
+            return Boolean.valueOf(loadPreferences(this.context, this.file, key, "" + defaultValue, this.mode)).booleanValue();
         } catch (Exception var4) {
-            return deflt;
+            return defaultValue;
         }
     }
 
+    @Deprecated
     public boolean contain(String key) {
-        return contain(this.context, this.file, key);
+        return contains(this.context, this.file, key);
+    }
+
+    public boolean contains(String key) {
+        return contains(this.context, this.file, key);
     }
 
     public Preferences setMode(int mode) {
@@ -155,7 +160,7 @@ public class Preferences {
         return sharedPreferences.edit();
     }
 
-    public static void SavePreferences(Context context, String File, String key, String value, int mode) {
+    public static void savePreferences(Context context, String File, String key, String value, int mode) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(File, mode);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(key, value);
@@ -163,12 +168,12 @@ public class Preferences {
         editor.apply();
     }
 
-    public static String LoadPreferences(Context context, String File, String key, String deflt, int mode) {
+    public static String loadPreferences(Context context, String File, String key, String defaultValue, int mode) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(File, mode);
-        return sharedPreferences.getString(key, deflt);
+        return sharedPreferences.getString(key, defaultValue);
     }
 
-    public static boolean contain(Context context, String File, String key) {
+    public static boolean contains(Context context, String File, String key) {
         return context.getSharedPreferences(File, 0).contains(key);
     }
 

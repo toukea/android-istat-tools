@@ -48,24 +48,46 @@ public class RSA {
         return privateKey;
     }
 
-    public static byte[] encrypt(String data, byte[] publicKeyBytes) throws BadPaddingException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException {
-        return encrypt(data, getPublicKey(publicKeyBytes));
+    @Deprecated
+    public static byte[] encryptString(String data, byte[] publicKeyBytes) throws BadPaddingException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException {
+        return encryptString(data, getPublicKey(publicKeyBytes));
     }
 
-    public static byte[] encrypt(String data, PublicKey publicKey) throws BadPaddingException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException {
+    @Deprecated
+    public static byte[] encryptString(String data, PublicKey publicKey) throws BadPaddingException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException {
         Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
         return cipher.doFinal(data.getBytes());
     }
 
-    public static String decrypt(byte[] data, PrivateKey privateKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
-        return new String(cipher.doFinal(data));
+    @Deprecated
+    public static String decryptToString(byte[] data, PrivateKey privateKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        return new String(decrypt(data, privateKey));
     }
 
-    public static String decrypt(String data, byte[] privateKeyBytes) throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return decrypt(Base64.decode(data.getBytes(), Base64.NO_WRAP), getPrivateKey(privateKeyBytes));
+    @Deprecated
+    public static String decryptToString(String data, byte[] privateKeyBytes) throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return decryptToString(Base64.decode(data.getBytes(), Base64.NO_WRAP), getPrivateKey(privateKeyBytes));
+    }
+
+    public static byte[] encrypt(byte[] data, byte[] publicKeyBytes) throws BadPaddingException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException {
+        return encrypt(data, getPublicKey(publicKeyBytes));
+    }
+
+    public static byte[] encrypt(byte[] data, PublicKey publicKey) throws BadPaddingException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException {
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        return cipher.doFinal(data);
+    }
+
+    public static byte[] decrypt(byte[] data, PrivateKey privateKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        return cipher.doFinal(data);
+    }
+
+    public static byte[] decrypt(byte[] data, byte[] privateKeyBytes) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        return decrypt(data, getPrivateKey(privateKeyBytes));
     }
 
     public static byte[] sign(byte[] plainTextBytes, PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
@@ -92,7 +114,7 @@ public class RSA {
     public static KeyPair generateKeyPair(InputStream JavaKeyStoreInputStream, String password) throws Exception {
         //Generated with:
         //  keytool -genkeypair -alias mykey -storepass s3cr3t -keypass s3cr3t -keyalg RSA -keystore keystore.jks
-        char[] passwordChars = password!=null? password.toCharArray():new char[]{};
+        char[] passwordChars = password != null ? password.toCharArray() : new char[]{};
 
         KeyStore keyStore = KeyStore.getInstance("JCEKS"); // ou "PKCS12"
         keyStore.load(JavaKeyStoreInputStream, passwordChars);   //Keystore password

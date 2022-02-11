@@ -147,7 +147,7 @@ public class EventDispatcher {
                 }
             }
         }
-        return 0;
+        return count;
     }
 
     public int unregisterEventListener(EventListener listener, String... eventNames) {

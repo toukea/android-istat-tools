@@ -1,5 +1,6 @@
 package istat.android.base.tools;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -28,6 +29,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
@@ -65,6 +67,7 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -1312,9 +1315,9 @@ public final class ToolKits {
         public Software() {
         }
 
-        public static final void installApk(Context context, String apkfile) {
+        public static final void installApk(Context context, String apkFile) {
             Intent intent = new Intent("android.intent.action.VIEW");
-            intent.setDataAndType(Uri.fromFile(new File(apkfile)), "application/vnd.android.package-archive");
+            intent.setDataAndType(Uri.fromFile(new File(apkFile)), "application/vnd.android.package-archive");
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
@@ -1354,6 +1357,15 @@ public final class ToolKits {
         }
 
         public static final boolean hasPermission(Context context, String permission) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (Objects.equals(permission, Manifest.permission.WRITE_EXTERNAL_STORAGE) ||
+                        Objects.equals(permission, Manifest.permission.MANAGE_EXTERNAL_STORAGE)) {
+                    return Environment.isExternalStorageManager();
+                }
+                if (Objects.equals(permission, Manifest.permission.READ_EXTERNAL_STORAGE) && Environment.isExternalStorageManager()) {
+                    return true;
+                }
+            }
             int res = context.checkCallingOrSelfPermission(permission);
             return res == 0;
         }
@@ -1444,6 +1456,8 @@ public final class ToolKits {
     }
 
     public static final class Stream {
+        public static final int DEFAULT_BUFFER_SIZE = 8192;
+
         private Stream() {
         }
 
@@ -1473,7 +1487,7 @@ public final class ToolKits {
 
         public static final String streamToString(InputStream inp) {
             String out = "";
-            byte[] b = new byte[1024];
+            byte[] b = new byte[DEFAULT_BUFFER_SIZE];
             try {
                 int read1;
                 while ((read1 = inp.read(b)) > -1) {
@@ -1487,7 +1501,7 @@ public final class ToolKits {
         }
 
         public static final void inputToOutput(String add, InputStream in, OutputStream out) throws Exception {
-            byte[] b = new byte[8352];
+            byte[] b = new byte[DEFAULT_BUFFER_SIZE];
             boolean read = false;
             byte[] tb = add.getBytes();
             out.write(tb);
@@ -1515,10 +1529,10 @@ public final class ToolKits {
 
         public static final long copyStream(InputStream is, OutputStream os) throws IOException {
             long out = 0;
-            byte[] bytes = new byte[1024];
+            byte[] bytes = new byte[DEFAULT_BUFFER_SIZE];
             int count;
             while (true) {
-                count = is.read(bytes, 0, 1024);
+                count = is.read(bytes, 0, DEFAULT_BUFFER_SIZE);
                 out += count;
                 if (count == -1) {
                     break;
@@ -1568,10 +1582,10 @@ public final class ToolKits {
 
         public static final long copyStream(InputStream is, OutputStream os, Decoder<byte[], byte[]> transformation) throws Exception {
             long out = 0;
-            byte[] bytes = new byte[1024];
+            byte[] bytes = new byte[DEFAULT_BUFFER_SIZE];
             int count;
             while (true) {
-                count = is.read(bytes, 0, 1024);
+                count = is.read(bytes, 0, DEFAULT_BUFFER_SIZE);
                 out += count;
                 if (count == -1) {
                     break;
@@ -1584,22 +1598,16 @@ public final class ToolKits {
             return out;
         }
 
-        public static final long copyStream(InputStream is, OutputStream os, int startByte) throws IOException {
-            long out = 0;
-
-            byte[] bytes = new byte[1024];
-            is.skip((long) startByte);
-
-            while (true) {
-                int count = is.read(bytes, 0, 1024);
-                out += count;
-                if (count == -1) {
-                    break;
-                }
-
-                os.write(bytes, 0, count);
+        public static final long copyStream(InputStream inputStream, OutputStream outputStream, int startByte) throws IOException {
+            long count = 0;
+            byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+            inputStream.skip(startByte);
+            int n;
+            while (-1 != (n = inputStream.read(buffer))) {
+                outputStream.write(buffer, 0, n);
+                count += n;
             }
-            return out;
+            return count;
 
         }
 
