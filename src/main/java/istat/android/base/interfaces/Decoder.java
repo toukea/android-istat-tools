@@ -4,8 +4,8 @@ package istat.android.base.interfaces;
  * Created by istat on 22/11/17.
  */
 
-public interface Decoder<Entity, Encoded> {
+public interface Decoder<Output, Input> {
 
-    Entity decode(Encoded encoded) throws Exception;
+    Output decode(Input input) throws Exception;
 
 }

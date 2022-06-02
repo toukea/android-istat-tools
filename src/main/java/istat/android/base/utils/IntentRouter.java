@@ -235,7 +235,9 @@ public class IntentRouter {
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 }
                 try {
-                    context.startActivity(intent);
+                    if (intent.getAction() != null || intent.getData() != null || intent.getComponent() != null) {
+                        context.startActivity(intent);
+                    }
                     return true;
                 } catch (Exception e) {
                     return false;

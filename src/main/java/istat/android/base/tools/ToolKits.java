@@ -320,6 +320,39 @@ public final class ToolKits {
 //            return extRootPaths;
 //        }
 
+        public static int deleteFiles(File directory, boolean recursively, Decoder<Boolean, File> shouldDeleteDecoder) {
+            int deleted = 0;
+            File[] files = directory.listFiles();
+            if (files != null) {
+                File[] var5 = files;
+                int var4 = files.length;
+                for (int i = 0; i < var4; ++i) {
+                    File currentFile = var5[i];
+                    if (currentFile.isDirectory() && recursively) {
+                        deleteFiles(currentFile, true, shouldDeleteDecoder);
+                    }
+                    try {
+                        if (shouldDeleteDecoder == null || shouldDeleteDecoder.decode(currentFile)) {
+                            deleted++;
+                            currentFile.delete();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                try {
+                    if (shouldDeleteDecoder == null || shouldDeleteDecoder.decode(directory)) {
+                        deleted++;
+                        directory.delete();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+            return deleted;
+        }
+
         public static String queryName(Context context, Uri uri) {
             ContentResolver resolver = context.getContentResolver();
             Cursor returnCursor =
@@ -825,6 +858,22 @@ public final class ToolKits {
             return deleted;
         }
 
+        public static final long computeDirectoryContentBytes(File directory) {
+            long bytes = 0;
+            File[] files = directory.listFiles();
+            if (files != null) {
+                int fileCount = files.length;
+                for (int i = 0; i < fileCount; ++i) {
+                    File currentFile = files[i];
+                    if (currentFile.isDirectory()) {
+                        bytes += computeDirectoryContentBytes(currentFile);
+                    }
+                }
+                bytes += directory.length();
+            }
+            return bytes;
+        }
+
         public static final int copyDirectory(File source, File destination) throws IOException {
             int copied = 0;
             File[] files = source.listFiles();
@@ -871,20 +920,20 @@ public final class ToolKits {
         public static final String fileSize(String url, int maxChar) {
             try {
                 BufferedInputStream e = new BufferedInputStream(new FileInputStream(url));
-                float sise = (float) e.available();
+                float size = (float) e.available();
                 e.close();
-                return (double) sise >= Math.pow(1000.0D, 3.0D) ? ToolKits.Word.shortWord(ToolKits.Word.adjustNumber(sise / 1.07374182E9F), maxChar) + " Go" : (sise >= 100000.0F ? ToolKits.Word.shortWord(ToolKits.Word.adjustNumber(sise / 1048576.0F), maxChar) + " Mo" : (sise >= 1000.0F ? ToolKits.Word.shortWord(ToolKits.Word.adjustNumber(sise / 1024.0F), maxChar) + " Ko" : ToolKits.Word.shortWord(ToolKits.Word.adjustNumber(sise), maxChar) + " oc"));
+                return (double) size >= Math.pow(1000.0D, 3.0D) ? ToolKits.Word.shortWord(ToolKits.Word.adjustNumber(size / 1.07374182E9F), maxChar) + " Go" : (size >= 100000.0F ? ToolKits.Word.shortWord(ToolKits.Word.adjustNumber(size / 1048576.0F), maxChar) + " Mo" : (size >= 1000.0F ? ToolKits.Word.shortWord(ToolKits.Word.adjustNumber(size / 1024.0F), maxChar) + " Ko" : ToolKits.Word.shortWord(ToolKits.Word.adjustNumber(size), maxChar) + " oc"));
             } catch (Exception var4) {
                 Log.e("tkit.filesise.error", "Error:" + var4);
                 return "--*--";
             }
         }
 
-        public static final String integerToFilesize(int sise) {
-            return (double) sise >= Math.pow(1000.0D, 3.0D) ? ToolKits.Word.adjustNumber((float) ((int) ((float) sise / 1.07374182E9F * 100.0F)) / 100.0F) + " Go" : (sise >= 100000 ? ToolKits.Word.adjustNumber((float) ((int) ((float) sise / 1048576.0F * 100.0F)) / 100.0F) + " Mo" : (sise >= 1000 ? ToolKits.Word.adjustNumber((float) ((int) ((float) sise / 1024.0F * 100.0F)) / 100.0F) + " Ko" : ToolKits.Word.adjustNumber((float) sise) + " oc"));
+        public static final String integerToFileSize(int byteCount) {
+            return (double) byteCount >= Math.pow(1000.0D, 3.0D) ? ToolKits.Word.adjustNumber((float) ((int) ((float) byteCount / 1.07374182E9F * 100.0F)) / 100.0F) + " Go" : (byteCount >= 100000 ? ToolKits.Word.adjustNumber((float) ((int) ((float) byteCount / 1048576.0F * 100.0F)) / 100.0F) + " Mo" : (byteCount >= 1000 ? ToolKits.Word.adjustNumber((float) ((int) ((float) byteCount / 1024.0F * 100.0F)) / 100.0F) + " Ko" : ToolKits.Word.adjustNumber((float) byteCount) + " oc"));
         }
 
-        public static final int URLSise(String url) {
+        public static final int computeURLSize(String url) {
             BufferedInputStream bfr = null;
 
             try {
@@ -897,7 +946,7 @@ public final class ToolKits {
             }
         }
 
-        static int URLConnexionSize(String url) {
+        static int computeURLConnexionSize(String url) {
             try {
                 URL e = new URL(url);
                 URLConnection connexion = e.openConnection();
