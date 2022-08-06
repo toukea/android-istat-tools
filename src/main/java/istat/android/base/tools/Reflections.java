@@ -61,7 +61,7 @@ public class Reflections {
             return clazz;
         } catch (Exception e) {
             throw new IllegalStateException(
-                    "Class is not parametrized with generic type!!! Please use extends <> ");
+                    "Class [" + baseClass + "]is not parametrized with generic type!!! Please use extends <> ");
         }
     }
 

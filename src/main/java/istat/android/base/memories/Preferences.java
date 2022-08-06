@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import java.util.Map;
 
 import istat.android.base.tools.TextUtils;
+import istat.android.base.tools.ToolKits;
 
 /**
  * Created by istat on 27/05/17.
@@ -73,6 +74,29 @@ public class Preferences {
         Gson gson = new Gson();
         String savedValue = gson.toJson(value);
         savePreferences(this.context, this.file, key, savedValue, this.mode);
+    }
+
+    public double decrementValue(String key) {
+        return incrementValue(key, -1);
+    }
+
+    public double incrementValue(String key) {
+        return incrementValue(key, 1);
+    }
+
+    public double incrementValue(String key, double incrementation) {
+        return incrementValue(key, incrementation, null, null);
+    }
+
+    public double incrementValue(String key, double incrementation, Double minValue, Double maxValue) {
+        String value = load(key);
+        double doubleValue = 0;
+        if (value != null && !ToolKits.WordFormat.isNumber(value)) {
+            return 0;
+        }
+        doubleValue = doubleValue + incrementation;
+        save(key, doubleValue);
+        return doubleValue;
     }
 
     public <T> T load(String key, Class<T> cLass) {

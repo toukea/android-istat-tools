@@ -1,5 +1,7 @@
 package istat.android.base.tools;
 
+import static android.os.Build.VERSION.SDK_INT;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -8,6 +10,7 @@ import android.app.ActivityManager.RunningAppProcessInfo;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.KeyguardManager;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -30,6 +33,8 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Process;
+import android.os.SystemClock;
 import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
@@ -730,9 +735,12 @@ public final class ToolKits {
             return fileExtension(file.getName());
         }
 
-        public static final String fileExtension(String file) {
-            int index = file.lastIndexOf(".") + 1;
-            return index > 0 && file.length() > index ? file.substring(index) : "";
+        public static final String fileExtension(String fileUri) {
+            if (fileUri == null) {
+                return null;
+            }
+            int index = fileUri.lastIndexOf(".") + 1;
+            return index > 0 && fileUri.length() > index ? fileUri.substring(index) : "";
         }
 
         public static final String fileExt(String url) {
@@ -1361,7 +1369,32 @@ public final class ToolKits {
     }
 
     public static final class Software {
-        public Software() {
+        private Software() {
+        }
+
+        public static boolean isAppForeground(Context context) {
+            if (!((KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE)).inKeyguardRestrictedInputMode()) {
+                if (SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                    SystemClock.sleep(10L);
+                }
+                int var1 = Process.myPid();
+                List<ActivityManager.RunningAppProcessInfo> runningAppProcessInfos = ((ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE)).getRunningAppProcesses();
+                if (runningAppProcessInfos != null) {
+                    Iterator<ActivityManager.RunningAppProcessInfo> runningAppProcessInfoIterator = runningAppProcessInfos.iterator();
+
+                    while (runningAppProcessInfoIterator.hasNext()) {
+                        ActivityManager.RunningAppProcessInfo appProcessInfo = runningAppProcessInfoIterator.next();
+                        if (appProcessInfo.pid == var1) {
+                            if (appProcessInfo.importance == 100) {
+                                return true;
+                            }
+
+                            return false;
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         public static final void installApk(Context context, String apkFile) {
