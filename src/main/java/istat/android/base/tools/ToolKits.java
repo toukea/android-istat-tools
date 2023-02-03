@@ -33,12 +33,14 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.IBinder;
 import android.os.Process;
 import android.os.SystemClock;
 import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.provider.Settings;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.util.Pair;
 import android.view.Display;
@@ -46,6 +48,8 @@ import android.view.Surface;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
+
+import androidx.annotation.RequiresApi;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -75,6 +79,8 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import istat.android.base.interfaces.Decoder;
 
@@ -125,11 +131,18 @@ public final class ToolKits {
         public Dates() {
         }
 
-        public static final boolean isDatePast(String datein) {
+        public static final boolean isTodayTimestamp(long timestamp) {
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
+            String currentDate = simpleDateFormat.format(new Date());
+            String givenDateToString = simpleDateFormat.format(new Date(timestamp));
+            return Objects.equals(currentDate, givenDateToString);
+        }
+
+        public static final boolean isDatePast(String dateToString) {
             try {
-                Date e = new Date(datein);
+                Date e = new Date(dateToString);
                 int compare = e.compareTo(new Date());
-                Log.d("wordutil_isDate", "compare=" + compare);
+                Log.d("word_util_is:date", "compare=" + compare);
                 return compare <= 0;
             } catch (Exception var3) {
                 return true;
@@ -192,7 +205,7 @@ public final class ToolKits {
             try {
                 alert.show();
             } catch (Exception var5) {
-                ;
+
             }
 
             return alert;
@@ -1014,17 +1027,41 @@ public final class ToolKits {
             imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_NOT_ALWAYS);
         }
 
-        public static final void closeKeyboard(Activity activity) {
+        public static void closeKeyboard(Activity activity) {
             if (activity == null) {
                 return;
             }
-            InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(activity.getCurrentFocus() != null ? activity.getCurrentFocus().getWindowToken() : null, 0);
+            View targetView = activity.getCurrentFocus();
+            if (targetView == null) {
+                if (activity.getWindow() != null && activity.getWindow().getDecorView() != null) {
+                    targetView = activity.getWindow().getDecorView();
+                }
+            }
+            if (targetView != null) {
+                closeKeyboard(activity, targetView.getWindowToken());
+            }
         }
 
-        public static final void closeKeyboard(View v) {
-            InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+        public static void closeKeyboard(View v) {
+            if (v == null) {
+                return;
+            }
+            IBinder token = v.getWindowToken();
+            if (token == null) {
+                View rootView = v.getRootView();
+                if (rootView != null) {
+                    token = rootView.getWindowToken();
+                }
+                if (token == null) {
+                    token = v.getApplicationWindowToken();
+                }
+            }
+            closeKeyboard(v.getContext(), token);
+        }
+
+        public static void closeKeyboard(Context context, IBinder token) {
+            InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(token, 0);
         }
 
         public static final boolean isLocationEnable(Context context) {
@@ -1045,20 +1082,54 @@ public final class ToolKits {
             return manager.isProviderEnabled("network");
         }
 
-        @SuppressLint("MissingPermission")
-        public static final void vibrate(Context context, int duration) {
-            if (ToolKits.Software.hasPermission(context, "android.permission.VIBRATE")) {
-                ((Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE)).vibrate((long) duration);
+        /**
+         * Get ISO 3166-1 alpha-2 country code for this device (or null if not available)
+         *
+         * @param context Context reference to get the TelephonyManager instance from
+         * @return country code or null
+         */
+        public static String queryDeviceLocationCountry(Context context) {
+            //http://ip-api.com/json  to request from the web api
+            try {
+                final TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+                final String simCountry = tm.getSimCountryIso();
+                if (simCountry != null && simCountry.length() == 2) { // SIM country code is available
+                    return simCountry.toLowerCase(Locale.US);
+                } else if (tm.getPhoneType() != TelephonyManager.PHONE_TYPE_CDMA) { // device is not 3G (would be unreliable)
+                    String networkCountry = tm.getNetworkCountryIso();
+                    if (networkCountry != null && networkCountry.length() == 2) { // network country code is available
+                        return networkCountry.toLowerCase(Locale.US);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+            return null;
+        }
+
+        @SuppressLint("MissingPermission")
+        public static boolean vibrate(Context context, long duration) {
+            if (context == null || duration <= 0) {
+                return false;
+            }
+            if (ToolKits.Software.hasPermission(context, "android.permission.VIBRATE")) {
+                ((Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE)).vibrate(duration);
+                return true;
+            }
+            return false;
 
         }
 
         @SuppressLint("MissingPermission")
-        public static final void vibrate(Context context, long[] pattern, int repeate) {
-            if (ToolKits.Software.hasPermission(context, "android.permission.VIBRATE")) {
-                ((Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE)).vibrate(pattern, repeate);
+        public static boolean vibrate(Context context, long[] pattern, int repeat) {
+            if (context == null || pattern == null || pattern.length == 0) {
+                return false;
             }
-
+            if (ToolKits.Software.hasPermission(context, "android.permission.VIBRATE")) {
+                ((Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE)).vibrate(pattern, repeat);
+                return true;
+            }
+            return false;
         }
     }
 
@@ -1397,14 +1468,38 @@ public final class ToolKits {
             return false;
         }
 
-        public static final void installApk(Context context, String apkFile) {
+
+        @RequiresApi(api = Build.VERSION_CODES.M)
+        public static boolean finishRunningTask(Context context, Class<?> activityClass) {
+            if (activityClass == null) {
+                return false;
+            }
+            ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            List<ActivityManager.AppTask> tasks = activityManager.getAppTasks();
+            Iterator<ActivityManager.AppTask> taskIterator = tasks.iterator();
+            ActivityManager.AppTask task;
+            ActivityManager.RecentTaskInfo taskInfo;
+            while (taskIterator.hasNext()) {
+                task = taskIterator.next();
+                if (task != null) {
+                    taskInfo = task.getTaskInfo();
+                    if (taskInfo.baseActivity != null && activityClass.getCanonicalName().equalsIgnoreCase(taskInfo.baseActivity.getClassName())) {
+                        task.finishAndRemoveTask();
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public static void installApk(Context context, String apkFile) {
             Intent intent = new Intent("android.intent.action.VIEW");
             intent.setDataAndType(Uri.fromFile(new File(apkFile)), "application/vnd.android.package-archive");
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
 
-        public static final Boolean isActivityRunning(Context context, Class<?> activityClass) {
+        public static Boolean isActivityRunning(Context context, Class<?> activityClass) {
             ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             List tasks = activityManager.getRunningTasks(Integer.MAX_VALUE);
             Iterator var5 = tasks.iterator();
@@ -1534,6 +1629,32 @@ public final class ToolKits {
             }
 
             return false;
+        }
+
+        public static long retrieveCurrentAppApkBuildTime(Context context) {
+            return retrieveAppApkBuildTime(context, context.getPackageName());
+        }
+
+        /*
+        A hint for solution "last modification time of classes.dex file" an newer AndroidStudio versions: In default config the timestamp is not written anymore to files in apk file. Timestamp is always "Nov 30 1979".
+        You can change this behavior by adding this line to file
+        %userdir%/.gradle/gradle.properties (create if not existing)
+        android.keepTimestampsInApk = true
+
+        https://stackoverflow.com/questions/7607165/how-to-write-build-time-stamp-into-apk
+         */
+        public static long retrieveAppApkBuildTime(Context context, String packageName) {
+            try {
+                ApplicationInfo ai = context.getPackageManager().getApplicationInfo(packageName, 0);
+                ZipFile zf = new ZipFile(ai.sourceDir);
+                ZipEntry ze = zf.getEntry("classes.dex");
+                long time = ze.getTime();
+                zf.close();
+                return time;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return -1;
+            }
         }
     }
 
@@ -1803,7 +1924,7 @@ public final class ToolKits {
             return Boolean.valueOf(parseString(s));
         }
 
-        public static final Calendar parseToCalandar(Object obj) {
+        public static final Calendar parseToCalendar(Object obj) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             GregorianCalendar cal = new GregorianCalendar();
 
@@ -1814,6 +1935,14 @@ public final class ToolKits {
             }
 
             return cal;
+        }
+
+        public static final String replaceFinalPunctuation(String word, String endingPunctuation) {
+            if (TextUtils.isEmpty(word)) {
+                return word;
+            }
+//            return word.replaceFirst("[^\n](\\p{Punct})$", endingPunctuation);
+            return word.replaceFirst("(\\p{Punct})$", endingPunctuation);
         }
 
         public static final String toSentence(String word, String endingPunctuation) {

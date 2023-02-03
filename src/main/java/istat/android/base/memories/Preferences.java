@@ -5,8 +5,12 @@ import android.content.SharedPreferences;
 
 import com.google.gson.Gson;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import istat.android.base.interfaces.Decoder;
 import istat.android.base.tools.TextUtils;
 import istat.android.base.tools.ToolKits;
 
@@ -50,6 +54,40 @@ public class Preferences {
         savePreferences(this.context, this.file, key, value, this.mode);
     }
 
+    public void save(HashMap<String, Object> nameValues) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(file, mode);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        for (Map.Entry<String, Object> entry : nameValues.entrySet()) {
+            editor.putString(entry.getKey(), String.valueOf(entry.getValue()));
+        }
+        editor.commit();
+        editor.apply();
+    }
+
+    public void save(List<String> keys, Decoder<String, Object> keyValueDecoder) {
+        try {
+            save(keys, keyValueDecoder, false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void save(List<String> keys, Decoder<String, Object> keyValueDecoder, boolean throwOnError) throws Exception {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(file, mode);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        for (String key : keys) {
+            try {
+                editor.putString(key, String.valueOf(keyValueDecoder.decode(key)));
+            } catch (Exception e) {
+                if (throwOnError) {
+                    throw e;
+                }
+            }
+        }
+        editor.commit();
+        editor.apply();
+    }
+
     public void save(String key, int value) {
         save(key, String.valueOf(value));
     }
@@ -80,12 +118,24 @@ public class Preferences {
         return incrementValue(key, -1);
     }
 
+    public double decrementValue(String key, double decrementing) {
+        return incrementValue(key, decrementing, null, null);
+    }
+
+    public double decrementValue(String key, double decrementing, double minValue) {
+        return incrementValue(key, decrementing, minValue, null);
+    }
+
     public double incrementValue(String key) {
         return incrementValue(key, 1);
     }
 
     public double incrementValue(String key, double incrementation) {
         return incrementValue(key, incrementation, null, null);
+    }
+
+    public double incrementValue(String key, double incrementation, double maxValue) {
+        return incrementValue(key, incrementation, null, maxValue);
     }
 
     public double incrementValue(String key, double incrementation, Double minValue, Double maxValue) {
@@ -95,6 +145,11 @@ public class Preferences {
             return 0;
         }
         doubleValue = doubleValue + incrementation;
+        if (maxValue != null && doubleValue > maxValue) {
+            return maxValue;
+        } else if (minValue != null && doubleValue < minValue) {
+            return minValue;
+        }
         save(key, doubleValue);
         return doubleValue;
     }
@@ -203,5 +258,13 @@ public class Preferences {
 
     public int length() {
         return getAll().size();
+    }
+
+    public boolean containsKeyValue(String preferenceKey, Object value) {
+        if (!contains(preferenceKey)) {
+            return false;
+        }
+        String persistedValue = load(preferenceKey);
+        return Objects.equals(persistedValue, String.valueOf(value));
     }
 }

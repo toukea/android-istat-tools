@@ -43,19 +43,6 @@ public class IntentRouter {
     INTENT_ACTION_DEFAULT_EXTRA = "default";
     private Decoder<String, String> variableDecoder;
 
-//    HashMap<String, String> variableKeyName = new HashMap() {
-//        {
-//            put(EXTRA_INTENT_ACTION, EXTRA_INTENT_ACTION);
-//            put(EXTRA_INTENT_URI, EXTRA_INTENT_URI);
-//            put(EXTRA_INTENT_MIME_TYPE, EXTRA_INTENT_MIME_TYPE);
-//
-//            put(EXTRA_INTENT_TARGET_TYPE, EXTRA_INTENT_TARGET_TYPE);
-//            put(EXTRA_INTENT_TARGET_CLASS, EXTRA_INTENT_TARGET_CLASS);
-//            put(EXTRA_INTENT_TARGET_PACKAGE_NAME, EXTRA_INTENT_TARGET_PACKAGE_NAME);
-//
-//        }
-//    };
-
 
     private IntentRouter() {
 
@@ -182,7 +169,15 @@ public class IntentRouter {
         }
         String dataUri = compute(source.getStringExtra(EXTRA_INTENT_DATA));
         String flags = compute(source.getStringExtra(EXTRA_INTENT_FLAGS));
-//        String action = source.getAction();
+        String action = compute(source.getStringExtra(EXTRA_INTENT_ACTION));
+        if (target.getAction() == null) {
+            if (action == null) {
+                action = source.getAction();
+            }
+            if (action != null) {
+                target.setAction(action);
+            }
+        }
         if (istat.android.base.tools.TextUtils.isEmpty(dataUri)) {
             dataUri = compute(source.getStringExtra(EXTRA_INTENT_URI));
         }
@@ -206,37 +201,50 @@ public class IntentRouter {
     }
 
     public boolean routeUri(Context context, Uri uri) {
-        return routeUri(context, null, uri);
+        return routeUri(context, uri, null, null);
     }
 
-    private boolean routeUri(Context context, Intent intent, Uri uri) {
-        if (intent == null) {
-            intent = new Intent();
+    public boolean routeUri(Context context, Uri uri, Bundle intentExtras) {
+        return routeUri(context, uri, intentExtras, null);
+    }
+
+    public boolean routeUri(Context context, Uri uri, Bundle intentExtras, Intent modelIntent) {
+        if (modelIntent == null) {
+            modelIntent = new Intent();
+        } else {
+            modelIntent = new Intent(modelIntent);
+        }
+        if (intentExtras != null && !intentExtras.isEmpty()) {
+            modelIntent.putExtras(intentExtras);
+            if (uri != null) {
+                modelIntent.removeExtra(EXTRA_INTENT_URI);
+                modelIntent.removeExtra(EXTRA_INTENT_DATA);
+            }
         }
         if (uri != null) {
             uri = Uri.parse(compute(uri.toString()));
             if (!TextUtils.isEmpty(uri.getFragment())) {
-                intent.setData(Uri.parse(compute(uri.getFragment())));
+                modelIntent.setData(Uri.parse(compute(uri.getFragment())));
             }
             for (String paramKey : uri.getQueryParameterNames()) {
                 //Il est juste a noter que les paramettre retourné ici on subit un URLDecode.
-                intent.putExtra(paramKey, compute(uri.getQueryParameter(paramKey)));
+                modelIntent.putExtra(paramKey, compute(uri.getQueryParameter(paramKey)));
             }
-            fillIntentWithIntentEmbeddedData(intent, intent);
-            if (!prepareIntentRouting(context, intent, null)) {
+            fillIntentWithIntentEmbeddedData(modelIntent, modelIntent);
+            if (!prepareIntentRouting(context, modelIntent, null)) {
                 return false;
             }
 
             for (UriIntentRoutHandler handler : uriIntentRoutHandlers) {
-                if (!handler.handle(context, uri, intent)) {
+                if (!handler.handle(context, uri, modelIntent)) {
                     continue;
                 }
                 if (!(context instanceof Activity)) {
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    modelIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 }
                 try {
-                    if (intent.getAction() != null || intent.getData() != null || intent.getComponent() != null) {
-                        context.startActivity(intent);
+                    if (modelIntent.getAction() != null || modelIntent.getData() != null || modelIntent.getComponent() != null) {
+                        context.startActivity(modelIntent);
                     }
                     return true;
                 } catch (Exception e) {
@@ -254,7 +262,7 @@ public class IntentRouter {
             fillIntentWithIntentEmbeddedData(intent, intent);
         }
         uri = intent.getData();
-        return routeUri(context, intent, uri);
+        return routeUri(context, uri, null, intent);
     }
 
     private String compute(String original) {
@@ -408,22 +416,21 @@ public class IntentRouter {
         final HashMap<String, String> activityClassNameMap = new HashMap<>();
 
         public DynamicPathIntentRoutHandler(Context context) {
-            try {
-                PackageManager pm = context.getPackageManager();
-                PackageInfo packageInfo;
-
-                packageInfo = pm.getPackageInfo(context.getPackageName(), PackageManager.GET_ACTIVITIES);
-                String[] split;
-                for (ActivityInfo info : packageInfo.activities) {
-                    split = info.name.split("\\.");
-                    if (split.length >= 2) {
-                        activityClassNameMap.put(split[split.length - 1], info.name);
+            if (context != null) {
+                try {
+                    PackageManager pm = context.getPackageManager();
+                    PackageInfo packageInfo = pm.getPackageInfo(context.getPackageName(), PackageManager.GET_ACTIVITIES);
+                    String[] splits;
+                    for (ActivityInfo info : packageInfo.activities) {
+                        splits = info.name.split("\\.");
+                        if (splits.length >= 2) {
+                            activityClassNameMap.put(splits[splits.length - 1], info.name);
+                        }
                     }
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
                 }
-            } catch (PackageManager.NameNotFoundException e) {
-                e.printStackTrace();
             }
-
         }
 
         @Override

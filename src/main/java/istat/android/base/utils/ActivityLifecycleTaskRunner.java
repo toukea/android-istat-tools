@@ -9,6 +9,7 @@ import android.os.Looper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 public class ActivityLifecycleTaskRunner {
@@ -20,7 +21,7 @@ public class ActivityLifecycleTaskRunner {
             WHEN_ACTIVITY_STOPPED = 4,
             WHEN_ACTIVITY_SAVE_INSTANCE_STATE = 5,
             WHEN_ACTIVITY_DESTROYED = 6;
-    final ConcurrentSkipListMap<String, List<TaskDelayPair>> taskQueue = new ConcurrentSkipListMap<>();
+    final ConcurrentSkipListMap<String, List<TaskDelayGroupTagTriplet>> taskQueue = new ConcurrentSkipListMap<>();
     Handler mHandler = new Handler(Looper.getMainLooper());
 
     static ActivityLifecycleTaskRunner instance;
@@ -66,9 +67,9 @@ public class ActivityLifecycleTaskRunner {
 
     private void executeTask(final Activity activity, final int when) {
         String entryName = getEntryName(activity.getClass(), when);
-        List<TaskDelayPair> pairs = taskQueue.get(entryName);
+        List<TaskDelayGroupTagTriplet> pairs = taskQueue.get(entryName);
         if (pairs != null && !pairs.isEmpty()) {
-            for (final TaskDelayPair pair : pairs) {
+            for (final TaskDelayGroupTagTriplet pair : pairs) {
                 if (pair.activityTask != null) {
                     Runnable runnable = new Runnable() {
                         @Override
@@ -128,6 +129,10 @@ public class ActivityLifecycleTaskRunner {
     }
 
     public static boolean planToRun(Application application, Class<? extends Activity> target, ActivityTak activityTak, int when, long delay) {
+        return planToRun(application, target, activityTak, when, delay, null);
+    }
+
+    public static boolean planToRun(Application application, Class<? extends Activity> target, ActivityTak activityTak, int when, long delay, String groupTag) {
         if (activityTak == null) {
             return false;
         }
@@ -137,7 +142,7 @@ public class ActivityLifecycleTaskRunner {
         if (when < 0) {
             when = 0;
         }
-        return instance.planToRun(target, activityTak, when, delay);
+        return instance.planToRun(target, activityTak, when, delay, groupTag);
     }
 
     public static int unPlanAll() {
@@ -155,10 +160,31 @@ public class ActivityLifecycleTaskRunner {
         }
         int output = 0;
         maiLoop:
-        for (Map.Entry<String, List<TaskDelayPair>> entry : instance.taskQueue.entrySet()) {
+        for (Map.Entry<String, List<TaskDelayGroupTagTriplet>> entry : instance.taskQueue.entrySet()) {
             secondLoop:
-            for (TaskDelayPair pair : entry.getValue()) {
+            for (TaskDelayGroupTagTriplet pair : entry.getValue()) {
                 if (pair.activityTask == activityTak) {
+                    if (entry.getValue().remove(pair)) {
+                        output++;
+                    }
+                    break secondLoop;
+                }
+            }
+        }
+        //TODO retourne le mombre de tache qui on été déplanifié.
+        return output;
+    }
+
+    public static int unPlanAll(String groupTag) {
+        if (instance == null) {
+            return 0;
+        }
+        int output = 0;
+        maiLoop:
+        for (Map.Entry<String, List<TaskDelayGroupTagTriplet>> entry : instance.taskQueue.entrySet()) {
+            secondLoop:
+            for (TaskDelayGroupTagTriplet pair : entry.getValue()) {
+                if (Objects.equals(pair.groupTag, groupTag)) {
                     if (entry.getValue().remove(pair)) {
                         output++;
                     }
@@ -186,11 +212,10 @@ public class ActivityLifecycleTaskRunner {
         return true;
     }
 
-
-    private boolean planToRun(Class<? extends Activity> target, ActivityTak activityTak, int when, long delay) {
+    private boolean planToRun(Class<? extends Activity> target, ActivityTak activityTak, int when, long delay, String groupTag) {
         String entryName = getEntryName(target, when);
-        TaskDelayPair pair = new TaskDelayPair(activityTak, delay);
-        List<TaskDelayPair> pairs = taskQueue.get(entryName);
+        TaskDelayGroupTagTriplet pair = new TaskDelayGroupTagTriplet(activityTak, delay, groupTag != null ? groupTag : entryName);
+        List<TaskDelayGroupTagTriplet> pairs = taskQueue.get(entryName);
         if (pairs == null) {
             pairs = new ArrayList<>();
             taskQueue.put(entryName, pairs);
@@ -199,13 +224,15 @@ public class ActivityLifecycleTaskRunner {
         return true;
     }
 
-    class TaskDelayPair {
+    class TaskDelayGroupTagTriplet {
         final ActivityTak activityTask;
         final long delay;
+        final String groupTag;
 
-        public TaskDelayPair(ActivityTak runnable, long delay) {
+        public TaskDelayGroupTagTriplet(ActivityTak runnable, long delay, String triplet) {
             this.activityTask = runnable;
             this.delay = delay;
+            this.groupTag = triplet;
         }
     }
 

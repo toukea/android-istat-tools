@@ -40,6 +40,17 @@ public class PayLoad {
         }
     }
 
+    public boolean isVariableDefined(int index) {
+        return variableArray.length > index;
+    }
+
+    public boolean isVariableNotNull(int index) {
+        if (variableArray.length > index) {
+            return variableArray[index] != null;
+        }
+        return false;
+    }
+
     public boolean isVarInstanceOf(int index, Class<?> cLass) {
         Object var = getVariable(index);
         return var != null && cLass != null && cLass.isAssignableFrom(var.getClass());

@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 import dalvik.system.DexFile;
 
@@ -150,6 +151,24 @@ public class Reflections {
             cLass = cLass.getSuperclass();
         }
         return fields;
+    }
+
+    public static Field getFieldIncludingPrivateAndSuper(Class<?> cLass, String fieldName, boolean accessibleOnly, boolean acceptStatic) {
+        while (/*!cLass.equals(Object.class) ||*/!cLass.getCanonicalName().startsWith("java")) {
+            Field[] fields = cLass.getDeclaredFields();
+            for (Field field : fields) {
+                if (field != null && (field.toString().contains("static") && !acceptStatic)) {
+                    continue;
+                }
+                if (!accessibleOnly || field.isAccessible()) {
+                    if (Objects.equals(fieldName, field.getName())) {
+                        return field;
+                    }
+                }
+            }
+            cLass = cLass.getSuperclass();
+        }
+        return null;
     }
 
     public static <T> T newInstance(Class<T> cLass) throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {

@@ -1,6 +1,9 @@
 package istat.android.base.tools;
 
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import android.util.Base64;
 
 import com.google.gson.Gson;
@@ -30,9 +33,6 @@ import istat.android.base.utils.HtmlStringUtils;
 import istat.android.base.utils.ListWrapper;
 import istat.android.base.utils.PayLoad;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 /**
  * Example local unit test, which will execute on the development machine (host).
  *
@@ -41,8 +41,21 @@ import static org.junit.Assert.assertTrue;
 public class ExampleUnitTest {
 
     @Test
+    public void isTodayTimestampTest() {
+        boolean isTodayTimestamp;
+        long currentTimestamp = System.currentTimeMillis();
+        long currentTimestampMinus7hours = currentTimestamp - (7 * 60 * 60 * 1000);
+        isTodayTimestamp = ToolKits.Dates.isTodayTimestamp(currentTimestampMinus7hours);
+        System.out.println("Today timestamp="+isTodayTimestamp);
+        long currentTimestampMinus12hours = currentTimestamp - (12 * 60 * 60 * 1000);
+        isTodayTimestamp = ToolKits.Dates.isTodayTimestamp(currentTimestampMinus12hours);
+        System.out.println("Today timestamp="+isTodayTimestamp);
+
+    }
+
+    @Test
     public void subPayLoadTest() {
-        PayLoad payLoad = new PayLoad(new Object[]{1,2,3,4});
+        PayLoad payLoad = new PayLoad(new Object[]{1, 2, 3, 4});
         PayLoad subPayLoad = payLoad.subPayload(2);
         assertTrue(subPayLoad.length() == 2);
         assertTrue(subPayLoad.getIntVariable(0) == 3);
@@ -169,6 +182,7 @@ public class ExampleUnitTest {
         int copiedCount = ToolKits.FileKits.copyDirectory(source, destination);
         assertTrue(copiedCount > 0);
     }
+
     @Test
     public void moveDirectoryTest() throws NoSuchAlgorithmException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, InvalidKeySpecException, BadPaddingException, SignatureException, IOException {
         File source = new File("/home/istat/Temp/qproject-copy/");

@@ -266,7 +266,7 @@ public class HtmlStringUtils {
         htmlEncodeChars.put('\u2663', "&clubs;");
         htmlEncodeChars.put('\u2665', "&hearts;");
         htmlEncodeChars.put('\u2666', "&diams;");
-//        htmlEncodeChars.put('\n', "<br/>");
+        htmlEncodeChars.put('\n', "<br/>");
     }
 
     private HtmlStringUtils() {
@@ -325,7 +325,6 @@ public class HtmlStringUtils {
             for (Map.Entry<Character, String> entry : htmlEncodeChars.entrySet()) {
                 decodingMap.put(entry.getValue(), entry.getKey());
             }
-            decodingMap.put("</br>", '\n');
         }
         return decode(source, decodingMap);
     }
