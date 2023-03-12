@@ -154,6 +154,14 @@ public class Preferences {
         return doubleValue;
     }
 
+    public <T> T load(String key, Class<T> cLass, T defaultValue) {
+        try {
+            return load(key, cLass);
+        } catch(Exception e) {
+            return defaultValue;
+        }
+    }
+
     public <T> T load(String key, Class<T> cLass) {
         String jsonString = loadPreferences(this.context, this.file, key, null, this.mode);
         if (TextUtils.isEmpty(jsonString)) {
