@@ -6,6 +6,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +17,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 public class ActivityLifecycleTaskRunner {
     public static int
+            WHEN_ACTIVITY_PRE_CREATED = 7,
             WHEN_ACTIVITY_CREATED = 0,
             WHEN_ACTIVITY_STARTED = 1,
             WHEN_ACTIVITY_RESUMED = 2,
@@ -28,6 +32,12 @@ public class ActivityLifecycleTaskRunner {
     Application application;
 
     Application.ActivityLifecycleCallbacks mActivityLifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
+
+        @Override
+        public void onActivityPreCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+            executeTask(activity, WHEN_ACTIVITY_PRE_CREATED);
+        }
+
         @Override
         public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
             executeTask(activity, WHEN_ACTIVITY_CREATED);
@@ -224,7 +234,7 @@ public class ActivityLifecycleTaskRunner {
         return true;
     }
 
-    class TaskDelayGroupTagTriplet {
+    static class TaskDelayGroupTagTriplet {
         final ActivityTak activityTask;
         final long delay;
         final String groupTag;
