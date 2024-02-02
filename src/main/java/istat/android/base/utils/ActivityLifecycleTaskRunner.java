@@ -10,7 +10,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -25,7 +26,7 @@ public class ActivityLifecycleTaskRunner {
             WHEN_ACTIVITY_STOPPED = 4,
             WHEN_ACTIVITY_SAVE_INSTANCE_STATE = 5,
             WHEN_ACTIVITY_DESTROYED = 6;
-    final ConcurrentSkipListMap<String, List<TaskDelayGroupTagTriplet>> taskQueue = new ConcurrentSkipListMap<>();
+    final ConcurrentSkipListMap<String, HashMap<ActivityTak, TaskDelayGroupTagTriplet>> taskQueue = new ConcurrentSkipListMap<>();
     Handler mHandler = new Handler(Looper.getMainLooper());
 
     static ActivityLifecycleTaskRunner instance;
@@ -77,24 +78,22 @@ public class ActivityLifecycleTaskRunner {
 
     private void executeTask(final Activity activity, final int when) {
         String entryName = getEntryName(activity.getClass(), when);
-        List<TaskDelayGroupTagTriplet> pairs = taskQueue.get(entryName);
-        if (pairs != null && !pairs.isEmpty()) {
-            for (final TaskDelayGroupTagTriplet pair : pairs) {
-                if (pair.activityTask != null) {
-                    Runnable runnable = new Runnable() {
-                        @Override
-                        public void run() {
-                            pair.activityTask.onRun(activity, when);
+        HashMap<ActivityTak, TaskDelayGroupTagTriplet> taskTripletMap = taskQueue.get(entryName);
+        if (taskTripletMap != null) {
+            Collection<TaskDelayGroupTagTriplet> triplets = new ArrayList<>(taskTripletMap.values());
+            if (!triplets.isEmpty()) {
+                for (final TaskDelayGroupTagTriplet triplet : triplets) {
+                    if (triplet.activityTask != null) {
+                        Runnable runnable = () -> triplet.activityTask.onRun(activity, when);
+                        if (triplet.delay == 0) {
+                            runnable.run();
+                        } else {
+                            mHandler.postDelayed(runnable, triplet.delay);
                         }
-                    };
-                    if (pair.delay == 0) {
-                        runnable.run();
-                    } else {
-                        mHandler.postDelayed(runnable, pair.delay);
                     }
                 }
+                taskQueue.remove(entryName);
             }
-            taskQueue.remove(entryName);
         }
         if (taskQueue.isEmpty()) {
             release();
@@ -170,11 +169,11 @@ public class ActivityLifecycleTaskRunner {
         }
         int output = 0;
         maiLoop:
-        for (Map.Entry<String, List<TaskDelayGroupTagTriplet>> entry : instance.taskQueue.entrySet()) {
+        for (Map.Entry<String, HashMap<ActivityTak, TaskDelayGroupTagTriplet>> entry : instance.taskQueue.entrySet()) {
             secondLoop:
-            for (TaskDelayGroupTagTriplet pair : entry.getValue()) {
-                if (pair.activityTask == activityTak) {
-                    if (entry.getValue().remove(pair)) {
+            for (TaskDelayGroupTagTriplet triplet : entry.getValue().values()) {
+                if (triplet.activityTask == activityTak) {
+                    if (entry.getValue().remove(triplet.activityTask) != null) {
                         output++;
                     }
                     break secondLoop;
@@ -191,11 +190,11 @@ public class ActivityLifecycleTaskRunner {
         }
         int output = 0;
         maiLoop:
-        for (Map.Entry<String, List<TaskDelayGroupTagTriplet>> entry : instance.taskQueue.entrySet()) {
+        for (Map.Entry<String, HashMap<ActivityTak, TaskDelayGroupTagTriplet>> entry : instance.taskQueue.entrySet()) {
             secondLoop:
-            for (TaskDelayGroupTagTriplet pair : entry.getValue()) {
-                if (Objects.equals(pair.groupTag, groupTag)) {
-                    if (entry.getValue().remove(pair)) {
+            for (TaskDelayGroupTagTriplet triplet : entry.getValue().values()) {
+                if (Objects.equals(triplet.groupTag, groupTag)) {
+                    if (entry.getValue().remove(triplet.activityTask) != null) {
                         output++;
                     }
                     break secondLoop;
@@ -224,13 +223,17 @@ public class ActivityLifecycleTaskRunner {
 
     private boolean planToRun(Class<? extends Activity> target, ActivityTak activityTak, int when, long delay, String groupTag) {
         String entryName = getEntryName(target, when);
-        TaskDelayGroupTagTriplet pair = new TaskDelayGroupTagTriplet(activityTak, delay, groupTag != null ? groupTag : entryName);
-        List<TaskDelayGroupTagTriplet> pairs = taskQueue.get(entryName);
-        if (pairs == null) {
-            pairs = new ArrayList<>();
-            taskQueue.put(entryName, pairs);
+        TaskDelayGroupTagTriplet triplet = new TaskDelayGroupTagTriplet(activityTak, delay, groupTag != null ? groupTag : entryName);
+        HashMap<ActivityTak, TaskDelayGroupTagTriplet> triplets = taskQueue.get(entryName);
+        if (triplets == null) {
+            triplets = new HashMap<>();
+            taskQueue.put(entryName, triplets);
+        } else {
+            if (triplets.containsKey(activityTak)) {
+                return false;
+            }
         }
-        pairs.add(pair);
+        triplets.put(activityTak, triplet);
         return true;
     }
 
