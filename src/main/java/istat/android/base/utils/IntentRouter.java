@@ -99,7 +99,9 @@ public class IntentRouter {
         if (!inputIntent.hasExtra(EXTRA_INTENT_ACTION)) {
             return routeIntentUri(context, inputIntent);
         }
-        intent.putExtras(inputIntent.getExtras());
+        if (inputIntent.getExtras() != null) {
+            intent.putExtras(inputIntent.getExtras());
+        }
         String action = intent.getStringExtra(EXTRA_INTENT_ACTION);
         if (TextUtils.isEmpty(action)) {
             return routeIntentUri(context, inputIntent);

@@ -117,7 +117,9 @@ public class Language {
         Configuration configuration = Language.set(application, languageCode);
         if (activity != null) {
             configuration = Language.set(activity, languageCode);
-            activity.recreate();
+            if (forceUpdate) {
+                activity.recreate();
+            }
         }
         return configuration;
     }

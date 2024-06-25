@@ -45,6 +45,10 @@ public class Preferences {
         return true;
     }
 
+    public String getNameSpace() {
+        return file;
+    }
+
     public Preferences getFile(String name) {
         this.file = name;
         return this;
@@ -108,6 +112,14 @@ public class Preferences {
         save(key, String.valueOf(value));
     }
 
+    public void saveBoolean(String key, boolean value) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(file, mode);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(key, value);
+        editor.commit();
+        editor.apply();
+    }
+
     public void save(String key, Object value) {
         Gson gson = new Gson();
         String savedValue = gson.toJson(value);
@@ -140,9 +152,11 @@ public class Preferences {
 
     public double incrementValue(String key, double incrementation, Double minValue, Double maxValue) {
         String value = load(key);
-        double doubleValue = 0;
+        double doubleValue;
         if (value != null && !ToolKits.WordFormat.isNumber(value)) {
             return 0;
+        } else {
+            doubleValue = ToolKits.Word.parseDouble(value);
         }
         doubleValue = doubleValue + incrementation;
         if (maxValue != null && doubleValue > maxValue) {
@@ -157,7 +171,7 @@ public class Preferences {
     public <T> T load(String key, Class<T> cLass, T defaultValue) {
         try {
             return load(key, cLass);
-        } catch(Exception e) {
+        } catch (Exception e) {
             return defaultValue;
         }
     }
@@ -175,23 +189,40 @@ public class Preferences {
         return loadPreferences(this.context, this.file, key, null, this.mode);
     }
 
+    @Deprecated
     public String load(String key, String defaultValue) {
         return loadPreferences(this.context, this.file, key, defaultValue, this.mode);
     }
 
     public int loadInt(String key, int defaultValue) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(file, mode);
         try {
-            return Integer.valueOf(loadPreferences(this.context, this.file, key, "" + defaultValue, this.mode)).intValue();
-        } catch (Exception var4) {
+            if (sharedPreferences.contains(key)) {
+                return sharedPreferences.getInt(key, defaultValue);
+            }
             return defaultValue;
+        } catch (Exception e1) {
+            try {
+                return Integer.parseInt(loadPreferences(this.context, this.file, key, "" + defaultValue, this.mode));
+            } catch (Exception e2) {
+                return defaultValue;
+            }
         }
     }
 
     public long loadLong(String key, long defaultValue) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(file, mode);
         try {
-            return Long.valueOf(loadPreferences(this.context, this.file, key, "" + defaultValue, this.mode)).longValue();
-        } catch (Exception var5) {
+            if (sharedPreferences.contains(key)) {
+                return sharedPreferences.getLong(key, defaultValue);
+            }
             return defaultValue;
+        } catch (Exception e1) {
+            try {
+                return Long.parseLong(loadPreferences(this.context, this.file, key, "" + defaultValue, this.mode));
+            } catch (Exception e2) {
+                return defaultValue;
+            }
         }
     }
 
@@ -212,10 +243,18 @@ public class Preferences {
     }
 
     public boolean loadBoolean(String key, boolean defaultValue) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(file, mode);
         try {
-            return Boolean.valueOf(loadPreferences(this.context, this.file, key, "" + defaultValue, this.mode)).booleanValue();
-        } catch (Exception var4) {
+            if (sharedPreferences.contains(key)) {
+                return sharedPreferences.getBoolean(key, defaultValue);
+            }
             return defaultValue;
+        } catch (Exception e1) {
+            try {
+                return Boolean.parseBoolean(loadPreferences(this.context, this.file, key, "" + defaultValue, this.mode));
+            } catch (Exception e2) {
+                return defaultValue;
+            }
         }
     }
 
@@ -274,5 +313,9 @@ public class Preferences {
         }
         String persistedValue = load(preferenceKey);
         return Objects.equals(persistedValue, String.valueOf(value));
+    }
+
+    public String loadString(String key, String defaultValue) {
+        return load(key, defaultValue);
     }
 }

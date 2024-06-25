@@ -42,16 +42,15 @@ import istat.android.base.tools.TextUtils;
 public class MemoryCache implements Cache<Bitmap> {
 
     private static final String TAG = "MemoryCache";
-    private static final Map<String, List<String>> entryNames = Collections.synchronizedMap(new HashMap<String, List<String>>());
+    private static final Map<String, List<String>> entryNames = Collections.synchronizedMap(new HashMap<>());
     //Last argument true for LRU ordering
-    private static final Map<String, Bitmap> cache = Collections.synchronizedMap(new LinkedHashMap<String, Bitmap>(10, 1.5f, true));
+    private static final Map<String, Bitmap> cache = Collections.synchronizedMap(new LinkedHashMap<>(10, 1.5f, true));
 
     //current allocated size
     private static long size = 0;
 
     //max memory cache folder used to download images in bytes
-    //TODO afin de permettre des comportement dynamique mettre un callable a la place.
-    public final static long DEFAULT_CACHE_SIZE_LIMIT = 4000000l;
+    public final static long DEFAULT_CACHE_SIZE_LIMIT = 1500000L;//12Mo
     final static Callable<Long> DEFAULT_LIMIT_CALLABLE = new Callable<Long>() {
         @Override
         public Long call() {
@@ -65,17 +64,12 @@ public class MemoryCache implements Cache<Bitmap> {
     }
 
     //TODO devrait être static et general a toute la class
-    public static void setLimit(final long new_limit) {
-        setLimit(new Callable<Long>() {
-            @Override
-            public Long call() throws Exception {
-                return new_limit;
-            }
-        });
-        Log.i(TAG, "MemoryCache will use up to " + new_limit / 1024. / 1024. + "MB");
+    public static void setByteLimit(final long byteLimit) {
+        setByteLimit(() -> byteLimit);
+        Log.i(TAG, "MemoryCache will use up to " + byteLimit / 1024. / 1024. + "MB");
     }
 
-    public static void setLimit(Callable<Long> callable) {
+    public static void setByteLimit(Callable<Long> callable) {
         limitCallable = callable != null ? callable : DEFAULT_LIMIT_CALLABLE;
     }
 
@@ -203,11 +197,11 @@ public class MemoryCache implements Cache<Bitmap> {
     private void checkSize() {
         Log.i(TAG, "cache size=" + size + " length=" + cache.size());
         if (size > getLimit()) {
-            Iterator<Entry<String, Bitmap>> iter = cache.entrySet().iterator();//least recently accessed item will be the first one iterated
-            while (iter.hasNext()) {
-                Entry<String, Bitmap> entry = iter.next();
+            Iterator<Entry<String, Bitmap>> entryIterator = cache.entrySet().iterator();//least recently accessed item will be the first one iterated
+            while (entryIterator.hasNext()) {
+                Entry<String, Bitmap> entry = entryIterator.next();
                 size -= getSizeInBytes(entry.getValue());
-                iter.remove();
+                entryIterator.remove();
                 if (size <= getLimit())
                     break;
             }

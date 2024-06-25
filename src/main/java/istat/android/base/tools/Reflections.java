@@ -13,9 +13,11 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import dalvik.system.DexFile;
+import istat.android.base.interfaces.Mappable;
 
 /**
  * Created by istat on 31/10/16.
@@ -217,19 +219,42 @@ public class Reflections {
     }
 
     public static HashMap<String, Object> toMap(Object object) throws IllegalAccessException {
-        return toMap(null, object);
+        return toMap(object, true);
     }
 
-    public static HashMap<String, Object> toMap(String prefix, Object object) throws IllegalAccessException {
+    public static HashMap<String, Object> toMap(Object object, boolean deepMapping) throws IllegalAccessException {
+        return toMap(object, deepMapping, null);
+    }
+
+    public static HashMap<String, Object> toMap(Object object, boolean deepMapping, String prefix) throws IllegalAccessException {
         if (prefix == null) {
             prefix = "";
         }
         HashMap<String, Object> map = new HashMap<>();
         List<Field> fields = getAllFieldFields(object.getClass(), true, false);
+        Object fieldObject;
         for (int i = 0; i < fields.size(); i++) {
             Field field = fields.get(i);
             field.setAccessible(true);
-            map.put(prefix + field.getName(), field.get(object));
+            fieldObject = field.get(object);
+            if (deepMapping && fieldObject != null) {
+                if (fieldObject instanceof List) {
+                    //TODO parcourir chaque valeur de la map et la mapper
+                } else if (fieldObject instanceof Map) {
+                    //TODO parcourir chaque valeur de la map et la mapper
+                } else if (fieldObject instanceof Mappable) {
+                    fieldObject = ((Mappable) fieldObject).toMap();
+                } else {
+                    Class<?> fieldObjectClass = fieldObject.getClass();
+                    if (!fieldObjectClass.isPrimitive() &&
+                            !(fieldObject instanceof Boolean) &&
+                            !(fieldObject instanceof Number) &&
+                            !(fieldObject instanceof CharSequence)) {
+                        fieldObject = toMap(fieldObject, true, prefix);
+                    }
+                }
+            }
+            map.put(prefix + field.getName(), fieldObject);
         }
         return map;
     }
@@ -253,4 +278,5 @@ public class Reflections {
         }
         return true;
     }
+
 }

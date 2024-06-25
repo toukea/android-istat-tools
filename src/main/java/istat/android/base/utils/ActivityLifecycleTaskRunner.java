@@ -26,7 +26,7 @@ public class ActivityLifecycleTaskRunner {
             WHEN_ACTIVITY_STOPPED = 4,
             WHEN_ACTIVITY_SAVE_INSTANCE_STATE = 5,
             WHEN_ACTIVITY_DESTROYED = 6;
-    final ConcurrentSkipListMap<String, HashMap<ActivityTak, TaskDelayGroupTagTriplet>> taskQueue = new ConcurrentSkipListMap<>();
+    final ConcurrentSkipListMap<String, HashMap<ActivityTak, TaskDefinition>> taskQueue = new ConcurrentSkipListMap<>();
     Handler mHandler = new Handler(Looper.getMainLooper());
 
     static ActivityLifecycleTaskRunner instance;
@@ -78,11 +78,11 @@ public class ActivityLifecycleTaskRunner {
 
     private void executeTask(final Activity activity, final int when) {
         String entryName = getEntryName(activity.getClass(), when);
-        HashMap<ActivityTak, TaskDelayGroupTagTriplet> taskTripletMap = taskQueue.get(entryName);
+        HashMap<ActivityTak, TaskDefinition> taskTripletMap = taskQueue.get(entryName);
         if (taskTripletMap != null) {
-            Collection<TaskDelayGroupTagTriplet> triplets = new ArrayList<>(taskTripletMap.values());
+            Collection<TaskDefinition> triplets = new ArrayList<>(taskTripletMap.values());
             if (!triplets.isEmpty()) {
-                for (final TaskDelayGroupTagTriplet triplet : triplets) {
+                for (final TaskDefinition triplet : triplets) {
                     if (triplet.activityTask != null) {
                         Runnable runnable = () -> triplet.activityTask.onRun(activity, when);
                         if (triplet.delay == 0) {
@@ -142,6 +142,10 @@ public class ActivityLifecycleTaskRunner {
     }
 
     public static boolean planToRun(Application application, Class<? extends Activity> target, ActivityTak activityTak, int when, long delay, String groupTag) {
+        return planToRun(application, target, activityTak, when, delay, groupTag, 0, null);
+    }
+
+    public static boolean planToRun(Application application, Class<? extends Activity> target, ActivityTak activityTak, int when, long delay, String groupTag, long timeout, Runnable onTimeout) {
         if (activityTak == null) {
             return false;
         }
@@ -151,7 +155,7 @@ public class ActivityLifecycleTaskRunner {
         if (when < 0) {
             when = 0;
         }
-        return instance.planToRun(target, activityTak, when, delay, groupTag);
+        return instance.planToRun(target, activityTak, when, delay, groupTag, timeout, onTimeout);
     }
 
     public static int unPlanAll() {
@@ -169,9 +173,9 @@ public class ActivityLifecycleTaskRunner {
         }
         int output = 0;
         maiLoop:
-        for (Map.Entry<String, HashMap<ActivityTak, TaskDelayGroupTagTriplet>> entry : instance.taskQueue.entrySet()) {
+        for (Map.Entry<String, HashMap<ActivityTak, TaskDefinition>> entry : instance.taskQueue.entrySet()) {
             secondLoop:
-            for (TaskDelayGroupTagTriplet triplet : entry.getValue().values()) {
+            for (TaskDefinition triplet : entry.getValue().values()) {
                 if (triplet.activityTask == activityTak) {
                     if (entry.getValue().remove(triplet.activityTask) != null) {
                         output++;
@@ -190,9 +194,9 @@ public class ActivityLifecycleTaskRunner {
         }
         int output = 0;
         maiLoop:
-        for (Map.Entry<String, HashMap<ActivityTak, TaskDelayGroupTagTriplet>> entry : instance.taskQueue.entrySet()) {
+        for (Map.Entry<String, HashMap<ActivityTak, TaskDefinition>> entry : instance.taskQueue.entrySet()) {
             secondLoop:
-            for (TaskDelayGroupTagTriplet triplet : entry.getValue().values()) {
+            for (TaskDefinition triplet : entry.getValue().values()) {
                 if (Objects.equals(triplet.groupTag, groupTag)) {
                     if (entry.getValue().remove(triplet.activityTask) != null) {
                         output++;
@@ -221,10 +225,10 @@ public class ActivityLifecycleTaskRunner {
         return true;
     }
 
-    private boolean planToRun(Class<? extends Activity> target, ActivityTak activityTak, int when, long delay, String groupTag) {
+    private boolean planToRun(Class<? extends Activity> target, ActivityTak activityTak, int when, long delay, String groupTag, long timeout, Runnable onTimeout) {
         String entryName = getEntryName(target, when);
-        TaskDelayGroupTagTriplet triplet = new TaskDelayGroupTagTriplet(activityTak, delay, groupTag != null ? groupTag : entryName);
-        HashMap<ActivityTak, TaskDelayGroupTagTriplet> triplets = taskQueue.get(entryName);
+        TaskDefinition definition = new TaskDefinition(activityTak, delay, groupTag != null ? groupTag : entryName, timeout, onTimeout);
+        HashMap<ActivityTak, TaskDefinition> triplets = taskQueue.get(entryName);
         if (triplets == null) {
             triplets = new HashMap<>();
             taskQueue.put(entryName, triplets);
@@ -233,19 +237,30 @@ public class ActivityLifecycleTaskRunner {
                 return false;
             }
         }
-        triplets.put(activityTak, triplet);
+        triplets.put(activityTak, definition);
+        if (timeout > 0) {
+            mHandler.postDelayed(() -> {
+                taskQueue.remove(entryName);
+                if (onTimeout != null) {
+                    onTimeout.run();
+                }
+            }, timeout);
+        }
         return true;
     }
 
-    static class TaskDelayGroupTagTriplet {
+    static class TaskDefinition {
         final ActivityTak activityTask;
-        final long delay;
+        final long delay, timeout;
         final String groupTag;
+        final Runnable timeoutRunnable;
 
-        public TaskDelayGroupTagTriplet(ActivityTak runnable, long delay, String triplet) {
+        public TaskDefinition(ActivityTak runnable, long delay, String triplet, long timeout, Runnable timeoutRunnable) {
             this.activityTask = runnable;
             this.delay = delay;
             this.groupTag = triplet;
+            this.timeout = timeout;
+            this.timeoutRunnable = timeoutRunnable;
         }
     }
 

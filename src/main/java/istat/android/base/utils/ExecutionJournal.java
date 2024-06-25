@@ -90,20 +90,20 @@ public class ExecutionJournal<Data> {
     }
 
     public static class Builder<Data> {
-        ExecutionJournal output = new ExecutionJournal();
+        ExecutionJournal<Data> output = new ExecutionJournal<>();
 
-        public Builder setSuccess(Data data) {
+        public Builder<Data> setSuccess(Data data) {
             output.data.add(data);
             return this;
         }
 
-        public Builder setFailure(Data data, Exception cause) {
+        public Builder<Data> setFailure(Data data, Exception cause) {
             output.data.add(data);
             output.errorMap.put(output.data.size() - 1, cause);
             return this;
         }
 
-        public ExecutionJournal build() {
+        public ExecutionJournal<Data> build() {
             return output;
         }
     }

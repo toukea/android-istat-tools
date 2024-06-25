@@ -12,6 +12,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.KeyguardManager;
 import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -1499,13 +1500,52 @@ public final class ToolKits {
             context.startActivity(intent);
         }
 
+        public static boolean isRunningOnTop(Context context) {
+            ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            List tasks = activityManager.getRunningTasks(1);
+            if (!tasks.isEmpty()) {
+                ActivityManager.RunningTaskInfo task = (ActivityManager.RunningTaskInfo) tasks.get(0);
+                ComponentName component = task.baseActivity;
+                if (component == null) {
+                    return false;
+                }
+                if (!Objects.equals(component.getPackageName(), context.getPackageName())) {
+                    return false;
+                }
+                try {
+                    Class cLass = Class.forName(component.getClassName());
+                    return Activity.class.isAssignableFrom(cLass);
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+//        public static boolean hasRunningActivity(Context context) {
+//            ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+//            List tasks = activityManager.getRunningTasks(Integer.MAX_VALUE);
+//            Iterator taskIterator = tasks.iterator();
+//
+//            while (taskIterator.hasNext()) {
+//                ActivityManager.RunningTaskInfo task = (ActivityManager.RunningTaskInfo) taskIterator.next();
+//                try {
+//                    Class cLass = Class.forName(task.baseActivity.getClassName());
+//
+//                } catch (Exception e) {
+//
+//                }
+//            }
+//            return false;
+//        }
+
         public static Boolean isActivityRunning(Context context, Class<?> activityClass) {
             ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             List tasks = activityManager.getRunningTasks(Integer.MAX_VALUE);
-            Iterator var5 = tasks.iterator();
+            Iterator taskIterator = tasks.iterator();
 
-            while (var5.hasNext()) {
-                ActivityManager.RunningTaskInfo task = (ActivityManager.RunningTaskInfo) var5.next();
+            while (taskIterator.hasNext()) {
+                ActivityManager.RunningTaskInfo task = (ActivityManager.RunningTaskInfo) taskIterator.next();
                 if (activityClass.getCanonicalName().equalsIgnoreCase(task.baseActivity.getClassName())) {
                     return Boolean.valueOf(true);
                 }
@@ -2002,8 +2042,12 @@ public final class ToolKits {
         }
 
         public static final String shortWord(CharSequence charSequence, int max) {
+            return shortWord(charSequence, max, "...");
+        }
+
+        public static final String shortWord(CharSequence charSequence, int max, String ellipsisEnding) {
             String word = charSequence.toString();
-            return word.length() <= max ? word : word.substring(0, max) + "...";
+            return word.length() <= max ? word : word.substring(0, max) + (ellipsisEnding != null ? ellipsisEnding : "");
         }
 
         public static final String distanceToKm(String word) {
@@ -2011,20 +2055,20 @@ public final class ToolKits {
             return word.equals("-1") ? "---" : (d > 1500 ? d / 1000 + "Km" : d + "m");
         }
 
-        public static final float getPercentNumericValue(int progresstate, int STEP, boolean comma) {
-            return comma ? (float) progresstate * 100.0F / (float) STEP : (float) ((int) ((float) progresstate * 100.0F / (float) STEP));
+        public static final float getPercentNumericValue(int progression, int STEP, boolean comma) {
+            return comma ? (float) progression * 100.0F / (float) STEP : (float) ((int) ((float) progression * 100.0F / (float) STEP));
         }
 
-        public static final String getPercentValue(int progresstate, int STEP, boolean comma) {
-            return comma ? (float) progresstate * 100.0F / (float) STEP + "%" : (int) ((float) progresstate * 100.0F / (float) STEP) + "%";
+        public static final String getPercentValue(int progression, int STEP, boolean comma) {
+            return comma ? (float) progression * 100.0F / (float) STEP + "%" : (int) ((float) progression * 100.0F / (float) STEP) + "%";
         }
 
-        public static final String getPercentValue(int progressState, int STEP) {
-            return (float) progressState * 100.0F / (float) STEP + "%";
+        public static final String getPercentValue(int progression, int STEP) {
+            return (float) progression * 100.0F / (float) STEP + "%";
         }
 
-        public static final float getPercentNumericValue(int progressState, int STEP) {
-            return (float) progressState * 100.0F / (float) STEP;
+        public static final float getPercentNumericValue(int progression, int STEP) {
+            return (float) progression * 100.0F / (float) STEP;
         }
 
         public static final String sweetNumber(int a) {
@@ -2032,11 +2076,11 @@ public final class ToolKits {
         }
 
         public static final String adjustNumber(double a) {
-            return (float) ((int) a) == a ? "" + (int) a : "" + a;
+            return (double) ((int) a) == a ? "" + (int) a : "" + a;
         }
 
         public static final String adjustedSweetNumber(double a) {
-            return (float) ((int) a) == a ? sweetNumber((int) a) : "" + a;
+            return (double) ((int) a) == a ? sweetNumber((int) a) : "" + a;
         }
 
     }
@@ -2049,6 +2093,13 @@ public final class ToolKits {
             Pattern p = Pattern.compile(".+@.+\\.[a-z]+");
             Matcher m = p.matcher(input);
             return m.matches();
+        }
+
+        public static final boolean isNumber(Object a) {
+            if (a == null) {
+                return false;
+            }
+            return isNumber(a.toString());
         }
 
         public static final boolean isNumber(String a) {

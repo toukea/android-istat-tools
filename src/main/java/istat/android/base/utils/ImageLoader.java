@@ -69,8 +69,7 @@ public class ImageLoader {
     FileCache fileCache;
     Context context;
     // Create Map (collection) to store image and image url in key value pair
-    private Map<ImageView, String> imageViews = Collections
-            .synchronizedMap(new WeakHashMap<ImageView, String>());
+    private final Map<ImageView, String> imageViews = Collections.synchronizedMap(new WeakHashMap<>());
     ExecutorService executorService;
     // handler to display images in UI thread
     Handler handler = new Handler(Looper.getMainLooper());
@@ -285,11 +284,11 @@ public class ImageLoader {
     }
 
     public final static ResourceConnectionHandler DEFAULT_RESOURCE_CONNECTION_HANDLER = new ResourceConnectionHandler() {
-        InputStream is = null;
         private Map<String, URLConnection> connectionMap = Collections.synchronizedMap(new WeakHashMap<String, URLConnection>());
 
         @Override
         public InputStream onConnect(String url) {
+            InputStream is;
             try {
                 URI uri = URI.create(url);
                 if (uri.getScheme() == null) {
@@ -314,7 +313,7 @@ public class ImageLoader {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return is;
+            return null;
         }
 
         @Override

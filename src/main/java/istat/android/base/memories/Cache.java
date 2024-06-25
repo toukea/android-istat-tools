@@ -9,11 +9,11 @@ import java.util.Set;
 public interface Cache<T> {
     T put(String key, T value);
 
-    T remove(String entryName);
+    T remove(String key);
 
-    boolean containsKey(String entryName);
+    boolean containsKey(String key);
 
-    T get(String entryName);
+    T get(String key);
 
     int size();
 

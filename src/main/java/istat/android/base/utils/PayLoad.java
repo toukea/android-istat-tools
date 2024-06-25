@@ -105,7 +105,7 @@ public class PayLoad {
         if (var == null) {
             return 0;
         }
-        return Integer.valueOf(String.valueOf(var));
+        return Integer.parseInt(String.valueOf(var));
     }
 
     public long getLongVariable(int index) throws ArrayIndexOutOfBoundsException {
@@ -117,7 +117,7 @@ public class PayLoad {
         if (var == null) {
             return 0;
         }
-        return Long.valueOf(String.valueOf(var));
+        return Long.parseLong(String.valueOf(var));
     }
 
     public float getFloatVariable(int index) throws ArrayIndexOutOfBoundsException {
@@ -129,7 +129,7 @@ public class PayLoad {
         if (var == null) {
             return 0;
         }
-        return Float.valueOf(String.valueOf(var));
+        return Float.parseFloat(String.valueOf(var));
     }
 
     public double getDoubleVariable(int index) throws ArrayIndexOutOfBoundsException {
@@ -141,7 +141,7 @@ public class PayLoad {
         if (var == null) {
             return 0;
         }
-        return Double.valueOf(String.valueOf(var));
+        return Double.parseDouble(String.valueOf(var));
     }
 
     public int length() {
@@ -161,7 +161,7 @@ public class PayLoad {
         if (var == null) {
             return false;
         }
-        return Boolean.valueOf(String.valueOf(String.valueOf(var)));
+        return Boolean.parseBoolean(String.valueOf(var));
     }
 
     public static PayLoad empty(int length) {

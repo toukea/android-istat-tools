@@ -61,7 +61,8 @@ public class LinkMovementMethod extends android.text.method.LinkMovementMethod {
 //        /**
 //         * @param text Whole text of {@link TextView}
 //         */
-        void onLongClick(final String text);
+default void onLongClick(final String text) {
+}
     }
 
 

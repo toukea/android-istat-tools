@@ -98,7 +98,7 @@ public class FileCache implements Cache<File> {
 
     public File resolve(String uri) {
         // Identify images by hashcode or encode by URLEncoder.encode.
-        String filename = entryGenerator.onGenerateEntry(uri);
+        String filename = entryGenerator != null ? entryGenerator.onGenerateEntry(uri) : uri;
         if (TextUtils.isEmpty(filename)) {
             return null;
         }
