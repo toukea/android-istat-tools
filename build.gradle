@@ -7,10 +7,11 @@ ext {
 }
 apply from: 'release-jar.gradle'
 android {
-    compileSdkVersion 30
+    namespace 'istat.android.base.tools'
+    compileSdkVersion 33
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 30
+        targetSdkVersion 31
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
