@@ -24,14 +24,14 @@ import javax.crypto.NoSuchPaddingException;
 
 public class RSA {
 
-    public static PublicKey getPublicKey(byte[] publicKeyBytes) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    public static PublicKey readPublicKey(byte[] publicKeyBytes) throws NoSuchAlgorithmException, InvalidKeySpecException {
 //            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(base64PublicKey.getBytes()));
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         return keyFactory.generatePublic(keySpec);
     }
 
-    public static PrivateKey getPrivateKey(byte[] privateKeyBytes) {
+    public static PrivateKey readPrivateKey(byte[] privateKeyBytes) {
         PrivateKey privateKey = null;
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
         KeyFactory keyFactory = null;
@@ -50,7 +50,7 @@ public class RSA {
 
     @Deprecated
     public static byte[] encryptString(String data, byte[] publicKeyBytes) throws BadPaddingException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException {
-        return encryptString(data, getPublicKey(publicKeyBytes));
+        return encryptString(data, readPublicKey(publicKeyBytes));
     }
 
     @Deprecated
@@ -67,11 +67,11 @@ public class RSA {
 
     @Deprecated
     public static String decryptToString(String data, byte[] privateKeyBytes) throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return decryptToString(Base64.decode(data.getBytes(), Base64.NO_WRAP), getPrivateKey(privateKeyBytes));
+        return decryptToString(Base64.decode(data.getBytes(), Base64.NO_WRAP), readPrivateKey(privateKeyBytes));
     }
 
     public static byte[] encrypt(byte[] data, byte[] publicKeyBytes) throws BadPaddingException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException {
-        return encrypt(data, getPublicKey(publicKeyBytes));
+        return encrypt(data, readPublicKey(publicKeyBytes));
     }
 
     public static byte[] encrypt(byte[] data, PublicKey publicKey) throws BadPaddingException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException {
@@ -87,7 +87,7 @@ public class RSA {
     }
 
     public static byte[] decrypt(byte[] data, byte[] privateKeyBytes) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        return decrypt(data, getPrivateKey(privateKeyBytes));
+        return decrypt(data, readPrivateKey(privateKeyBytes));
     }
 
     public static byte[] sign(byte[] plainTextBytes, PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
@@ -111,7 +111,7 @@ public class RSA {
         return keyGen.generateKeyPair();
     }
 
-    public static KeyPair generateKeyPair(InputStream JavaKeyStoreInputStream, String password) throws Exception {
+    public static KeyPair generateKeyPair(InputStream JavaKeyStoreInputStream, String alias, String password) throws Exception {
         //Generated with:
         //  keytool -genkeypair -alias mykey -storepass s3cr3t -keypass s3cr3t -keyalg RSA -keystore keystore.jks
         char[] passwordChars = password != null ? password.toCharArray() : new char[]{};
@@ -121,9 +121,9 @@ public class RSA {
         KeyStore.PasswordProtection keyPassword =       //Key password
                 new KeyStore.PasswordProtection(passwordChars);
 
-        KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry) keyStore.getEntry("mykey", keyPassword);
+        KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry) keyStore.getEntry(alias, keyPassword);
 
-        java.security.cert.Certificate cert = keyStore.getCertificate("mykey");
+        java.security.cert.Certificate cert = keyStore.getCertificate(alias);
         PublicKey publicKey = cert.getPublicKey();
         PrivateKey privateKey = privateKeyEntry.getPrivateKey();
 

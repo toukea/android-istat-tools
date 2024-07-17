@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -227,6 +228,10 @@ public class Reflections {
     }
 
     public static HashMap<String, Object> toMap(Object object, boolean deepMapping, String prefix) throws IllegalAccessException {
+        return toMap(object, deepMapping, prefix, true);
+    }
+
+    public static HashMap<String, Object> toMap(Object object, boolean deepMapping, String prefix, boolean includeNullValue) throws IllegalAccessException {
         if (prefix == null) {
             prefix = "";
         }
@@ -236,6 +241,9 @@ public class Reflections {
         for (int i = 0; i < fields.size(); i++) {
             Field field = fields.get(i);
             field.setAccessible(true);
+            if (Modifier.isVolatile(field.getModifiers())) {
+                continue;
+            }
             fieldObject = field.get(object);
             if (deepMapping && fieldObject != null) {
                 if (fieldObject instanceof List) {
@@ -254,7 +262,9 @@ public class Reflections {
                     }
                 }
             }
-            map.put(prefix + field.getName(), fieldObject);
+            if (fieldObject != null || includeNullValue) {
+                map.put(prefix + field.getName(), fieldObject);
+            }
         }
         return map;
     }

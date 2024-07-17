@@ -1,17 +1,14 @@
 package istat.android.base.security;
 
 import java.io.IOException;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
-
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,20 +26,33 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class AES {
     final static String CIPHER_ALGORITHM = "AES";
-    final static int SALT_LEN = 8;
+    final static int DEFAULT_SALT_LEN = 8;
     public static final int DEFAULT_KEY_LENGTH_BITS = 128;    // see notes below where this is used.
     public static final int DEFAULT_ITERATIONS = 65536;
     public static final int DEFAULT_MAX_FILE_BUF = 1024;
-    public static final byte[] DEFAULT_SALT = new byte[SALT_LEN];
-    byte[] salt = DEFAULT_SALT;
+    static final byte[] DEFAULT_SALT = new byte[DEFAULT_SALT_LEN];
+    byte[] salt = null;
     private int keyLengthBits = DEFAULT_KEY_LENGTH_BITS;    // see notes below where this is used.
     private int iterations = DEFAULT_ITERATIONS;
     private int bufferSize = DEFAULT_MAX_FILE_BUF;
 
     public AES() {
+        this(null);
+    }
+
+    public AES(String salt) {
+        if (salt != null) {
+            setSalt(salt);
+        }
     }
 
     public byte[] getSalt() {
+        if (salt == null || salt.length == 0) {
+            // crate secureRandom salt and store  as member var for later use
+            salt = new byte[DEFAULT_SALT_LEN];
+//            SecureRandom rnd = new SecureRandom();
+//            rnd.nextBytes(salt);
+        }
         return salt;
     }
 
@@ -139,16 +149,9 @@ public class AES {
             long totalread = 0;
             int nread = 0;
             byte[] inbuf = new byte[bufferSize];
-            SecretKeyFactory factory = null;
-            SecretKey tmp = null;
-
-            // crate secureRandom salt and store  as member var for later use
-            salt = new byte[SALT_LEN];
-
-            SecureRandom rnd = new SecureRandom();
-
-            rnd.nextBytes(salt);
-            Db("generated salt :" + byteToHex(salt));
+            SecretKeyFactory factory;
+            SecretKey tmp;
+            byte[] salt = getSalt();
             factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
 
             /*
@@ -246,14 +249,13 @@ public class AES {
             long totalread = 0;
             int nread = 0;
             byte[] inbuf = new byte[bufferSize];
-
+            byte[] salt = getSalt();
             // Read the Salt
-            inputStream.read(this.salt);
-            Db("generated salt :" + byteToHex(salt));
+            inputStream.read(salt);
 
-            SecretKeyFactory factory = null;
-            SecretKey tmp = null;
-            SecretKey secret = null;
+            SecretKeyFactory factory;
+            SecretKey tmp;
+            SecretKey secret;
 
             factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
 
@@ -360,7 +362,7 @@ public class AES {
         SecretKey secret;
 
         factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-        KeySpec spec = new PBEKeySpec(new String(keyValue).toCharArray(), salt, iterations, keyLengthBits);
+        KeySpec spec = new PBEKeySpec(new String(keyValue).toCharArray(), getSalt(), iterations, keyLengthBits);
 
         tmp = factory.generateSecret(spec);
         secret = new SecretKeySpec(tmp.getEncoded(), CIPHER_ALGORITHM);
