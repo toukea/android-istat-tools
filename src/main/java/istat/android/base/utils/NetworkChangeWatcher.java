@@ -19,6 +19,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import istat.android.base.tools.ToolKits;
+
 public class NetworkChangeWatcher extends BroadcastReceiver {
     static NetworkChangeWatcher instance;
     final ConcurrentHashMap<Context, List<OnNetworkChangeListener>> contextListenerMap = new ConcurrentHashMap<>();
@@ -54,9 +56,12 @@ public class NetworkChangeWatcher extends BroadcastReceiver {
         return listeners != null && !listeners.isEmpty();
     }
 
-
     public static boolean registerListener(Activity activity, OnNetworkChangeListener listener, boolean stopOnActivityDestroyed) {
-        boolean output = _registerListener(activity, listener);
+        return registerListener(activity, listener, stopOnActivityDestroyed, false);
+    }
+
+    public static boolean registerListener(Activity activity, OnNetworkChangeListener listener, boolean stopOnActivityDestroyed, boolean allowDispatchInitialState) {
+        boolean output = _registerListener(activity, listener, allowDispatchInitialState);
         if (output && stopOnActivityDestroyed) {
             activity.getApplication().registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
                 @Override
@@ -100,13 +105,17 @@ public class NetworkChangeWatcher extends BroadcastReceiver {
     }
 
     public static boolean registerListener(Context context, OnNetworkChangeListener listener) {
-        if (context instanceof Activity) {
-            return registerListener((Activity) context, listener, true);
-        }
-        return _registerListener(context, listener);
+        return registerListener(context, listener, false);
     }
 
-    private static boolean _registerListener(Context context, OnNetworkChangeListener listener) {
+    public static boolean registerListener(Context context, OnNetworkChangeListener listener, boolean allowDispatchInitialState) {
+        if (context instanceof Activity) {
+            return registerListener((Activity) context, listener, true, allowDispatchInitialState);
+        }
+        return _registerListener(context, listener, allowDispatchInitialState);
+    }
+
+    private static boolean _registerListener(Context context, OnNetworkChangeListener listener, boolean allowDispatchInitialState) {
         NetworkChangeWatcher instance = getInstance();
         List<OnNetworkChangeListener> listeners = instance.contextListenerMap.get(context);
         if (listeners != null) {
@@ -116,13 +125,16 @@ public class NetworkChangeWatcher extends BroadcastReceiver {
         } else {
             listeners = new ArrayList<>();
             instance.contextListenerMap.put(context, listeners);
-            instance.registerBroadcastReceiver(context);
+            instance.registerBroadcastReceiver(context, allowDispatchInitialState);
         }
         listeners.add(listener);
         return true;
     }
 
-    private void registerBroadcastReceiver(Context context) {
+    private void registerBroadcastReceiver(Context context, boolean allowDispatchInitialState) {
+        if (!allowDispatchInitialState) {
+            lastKnowConnectionState = ToolKits.Network.isNetworkConnected(context);
+        }
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         context.registerReceiver(this, filter);
     }
