@@ -118,7 +118,7 @@ public class EventDispatcher {
 
     private List<EventListener> getEventDispatcherListByEventName(String eventName) {
         if (!eventNameListenerMap.containsKey(eventName)) {
-            eventNameListenerMap.put(eventName, new ArrayList());
+            eventNameListenerMap.put(eventName, new ArrayList<>());
         }
         return eventNameListenerMap.get(eventName);
     }

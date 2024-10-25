@@ -1923,19 +1923,23 @@ public final class ToolKits {
         }
 
         public static final double parseDouble(Object o) {
+            return parseDouble(o, 0.0D);
+        }
+
+        public static final double parseDouble(Object o, double defaultValue) {
             String s = parseString(o);
             if (s != null && !s.equals("")) {
                 if (s.trim().length() == 0) {
-                    return 0.0D;
+                    return defaultValue;
                 } else {
                     try {
                         return Double.parseDouble(s.trim());
                     } catch (Exception var3) {
-                        return 0.0D;
+                        return defaultValue;
                     }
                 }
             } else {
-                return 0.0D;
+                return defaultValue;
             }
         }
 
@@ -2026,11 +2030,19 @@ public final class ToolKits {
         }
 
         public static final int parseInt(Object obj) {
-            return parseInt(parseString(obj));
+            return parseInt(obj, 0);
+        }
+
+        public static final int parseInt(Object obj, int defaultValue) {
+            return parseInt(parseString(obj), defaultValue);
         }
 
         public static final int parseInt(String s) {
-            return (int) parseDouble(s);
+            return parseInt(s, 0);
+        }
+
+        public static final int parseInt(String s, int defaultValue) {
+            return (int) parseDouble(s, defaultValue);
         }
 
         public static final String numberToWords(long number, Locale locale) {

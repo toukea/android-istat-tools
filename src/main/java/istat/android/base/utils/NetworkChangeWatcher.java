@@ -24,6 +24,7 @@ import istat.android.base.tools.ToolKits;
 public class NetworkChangeWatcher extends BroadcastReceiver {
     static NetworkChangeWatcher instance;
     final ConcurrentHashMap<Context, List<OnNetworkChangeListener>> contextListenerMap = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<OnNetworkChangeListener, Boolean> listenerLastKnownConnectionStateMap = new ConcurrentHashMap<>();
     boolean lastKnowConnectionState = false;
     boolean isWatching = false;
 
@@ -139,8 +140,13 @@ public class NetworkChangeWatcher extends BroadcastReceiver {
         context.registerReceiver(this, filter);
     }
 
-    private void unregisterBroadcastReceiver(Context context) {
-        context.unregisterReceiver(this);
+    private boolean unregisterBroadcastReceiver(Context context) {
+        try {
+            context.unregisterReceiver(this);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
 
@@ -155,13 +161,19 @@ public class NetworkChangeWatcher extends BroadcastReceiver {
             if (listeners != null && !listeners.isEmpty()) {
                 for (OnNetworkChangeListener listener : listeners) {
                     listener.onNetworkInfoChanged(networkInfo);
-                    if (lastKnowConnectionState != isConnected) {
+                    if (getLastKnowConnectionState(listener) != isConnected) {
                         listener.onNetworkStateChanged(isConnected);
                     }
+                    listenerLastKnownConnectionStateMap.put(listener, isConnected);
                 }
             }
             lastKnowConnectionState = isConnected;
         }
+    }
+
+    private boolean getLastKnowConnectionState(OnNetworkChangeListener listener) {
+        Boolean state = listenerLastKnownConnectionStateMap.get(listener);
+        return state != null ? state : lastKnowConnectionState;
     }
 
     public interface OnNetworkChangeListener {

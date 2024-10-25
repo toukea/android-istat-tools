@@ -24,6 +24,71 @@ public class PayLoad {
         return Arrays.asList(variableArray);
     }
 
+    public String optStringVariable(int index) {
+        return optVariable(index, null, String.class);
+    }
+
+    public String optStringVariable(int index, String defaultValue) {
+        return optVariable(index, defaultValue, String.class);
+    }
+
+    public Integer optIntegerVariable(int index) {
+        return optVariable(index, null, Integer.class);
+    }
+
+    public Integer optIntegerVariable(int index, Integer defaultValue) {
+        return optVariable(index, defaultValue, Integer.class);
+    }
+
+    public int optIntVariable(int index, int defaultValue) {
+        return optVariable(index, defaultValue, Integer.class);
+    }
+
+    public Float optFloatVariable(int index) {
+        return optVariable(index, null, Float.class);
+    }
+
+    public Float optFloatVariable(int index, Float defaultValue) {
+        return optVariable(index, defaultValue, Float.class);
+    }
+
+    public Double optDoubleVariable(int index) {
+        return optVariable(index, null, Double.class);
+    }
+
+    public Double optDoubleVariable(int index, Double defaultValue) {
+        return optVariable(index, defaultValue, Double.class);
+    }
+
+    public Long optLongVariable(int index) {
+        return optVariable(index, null, Long.class);
+    }
+
+    public Long optLongVariable(int index, Long defaultValue) {
+        return optVariable(index, defaultValue, Long.class);
+    }
+
+    public <T> T optVariable(int index) {
+        return optVariable(index, null);
+    }
+
+    public <T> T optVariable(int index, T defaultValue) {
+        return optVariable(index, defaultValue, null);
+    }
+
+    public <T> T optVariable(int index, T defaultValue, Class<T> cLass) {
+        try {
+            Object value = variableArray[index];
+            if (cLass == null || cLass.isAssignableFrom(value.getClass())) {
+                return (T) value;
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
     public <T> T getVariable(int index) {
         return getVariable(index, null);
     }

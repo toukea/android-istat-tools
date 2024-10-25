@@ -21,7 +21,7 @@ public class ActivityLifeCycleWatcher {
     @SuppressLint("NewApi")
     public void startWatching(Activity activity, ActivityLifeCycleListener callbacks) {
         Application.ActivityLifecycleCallbacks callbacks1 = createInternalCallback(activity, callbacks);
-        cache.put(activity, createInternalCallback(activity, callbacks));
+        cache.put(activity, callbacks1);
         activity.getApplication().registerActivityLifecycleCallbacks(callbacks1);
     }
 
@@ -104,5 +104,35 @@ public class ActivityLifeCycleWatcher {
         void onActivitySaveInstanceState(Bundle outState);
 
         void onActivityDestroyed();
+    }
+
+    public interface  DefaultActivityLifeCycleListener extends ActivityLifeCycleListener{
+        default void onActivityCreated(Bundle savedInstanceState){
+
+        }
+
+        default void onActivityStarted(){
+
+        }
+
+        default void onActivityResumed(){
+
+        }
+
+        default void onActivityPaused(){
+
+        }
+
+        default void onActivityStopped(){
+
+        }
+
+        default void onActivitySaveInstanceState(Bundle outState){
+
+        }
+
+        default void onActivityDestroyed(){
+
+        }
     }
 }
