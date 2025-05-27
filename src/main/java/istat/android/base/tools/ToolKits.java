@@ -64,6 +64,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.SequenceInputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -322,6 +323,23 @@ public final class ToolKits {
 
     public static final class FileKits {
 
+        public static void writeStackTrace(File file, Throwable throwable) {
+            // Définir le fichier où écrire la stack trace
+            try (FileWriter fileWriter = new FileWriter(file, true);  // 'true' pour ajouter au fichier existant
+                 PrintWriter printWriter = new PrintWriter(fileWriter)) {
+
+                // Écrire la stack trace dans le fichier
+                throwable.printStackTrace(printWriter);
+
+                // Confirmer que la stack trace a été écrite
+                System.out.println("Stack trace written to: " + file.getAbsolutePath());
+
+            } catch (IOException e) {
+                // Gérer les erreurs liées à l'écriture du fichier
+                System.err.println("Error writing stack trace to file: " + e.getMessage());
+            }
+        }
+
         public enum ScanUsage {
             IGNORE,
             TARGET
@@ -436,7 +454,7 @@ public final class ToolKits {
 
         /*
         OpenableColumns.DISPLAY_NAME);
-    int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE
+        int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE
          */
         //TODO remplacer le nom de cette methode avec findContentWithFileExtension
         @SuppressLint("NewApi")
@@ -739,10 +757,20 @@ public final class ToolKits {
                 (new File(filePath)).getParentFile().mkdirs();
             }
 
-            FileWriter writer = new FileWriter(filePath);
+            FileWriter writer = new FileWriter(filePath, true);
             writer.append(content);
             writer.flush();
             writer.close();
+        }
+
+        public static final boolean tryAppendString(String content, String filePath) {
+            try {
+                appendString(content, filePath);
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
         }
 
         public static final String fileExtension(File file) {
