@@ -25,6 +25,7 @@ import java.net.URLConnection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -34,6 +35,7 @@ import istat.android.base.memories.FileCache;
 import istat.android.base.memories.MemoryCache;
 import istat.android.base.tools.Bitmaps;
 import istat.android.base.tools.ToolKits;
+import kotlin.Triple;
 
 /*
  * Copyright (C) 2014 Istat Dev.
@@ -73,6 +75,7 @@ public class ImageLoader {
     ExecutorService executorService;
     // handler to display images in UI thread
     Handler handler = new Handler(Looper.getMainLooper());
+    ConcurrentLinkedQueue<BitmapProvider> bitmapProviders = new ConcurrentLinkedQueue<>();
 
     public ImageLoader(Context context) {
         this(context,
@@ -109,6 +112,20 @@ public class ImageLoader {
         this.fileCache = fileCache;
     }
 
+    public boolean registerBitmapProvider(BitmapProvider provider) {
+        if (bitmapProviders.contains(provider)) {
+            return false;
+        }
+        bitmapProviders.add(provider);
+        return true;
+    }
+
+    public boolean unregisterBitmapProvider(BitmapProvider provider) {
+        if (provider == null) {
+            return false;
+        }
+        return bitmapProviders.remove(provider);
+    }
 
     public void setImageQuality(int imageQuality) {
         this.imageQuality = imageQuality;
@@ -182,6 +199,10 @@ public class ImageLoader {
     }
 
     public void displayImage(String path, ImageView imageView, LoadCallback loadCallback) {
+        displayImage(path, imageView, loadCallback, 0);
+    }
+
+    public void displayImage(String path, ImageView imageView, LoadCallback loadCallback, int loadDelay) {
         // Store image and url in Map
         imageViews.put(imageView, path);
 
@@ -196,7 +217,12 @@ public class ImageLoader {
             notifyImageLoaded(photoToLoad, loadCallback, bitmap);
         } else {
             // queue Photo to download create url
-            queuePhoto(path, imageView, loadCallback);
+            Runnable runnable = () ->queuePhoto(path, imageView, loadCallback);
+            if (loadDelay > 0) {
+                imageView.postDelayed(runnable, loadDelay);
+            } else {
+                runnable.run();
+            }
         }
     }
 
@@ -284,7 +310,7 @@ public class ImageLoader {
     }
 
     public final static ResourceConnectionHandler DEFAULT_RESOURCE_CONNECTION_HANDLER = new ResourceConnectionHandler() {
-        private Map<String, URLConnection> connectionMap = Collections.synchronizedMap(new WeakHashMap<String, URLConnection>());
+        private final Map<String, URLConnection> connectionMap = Collections.synchronizedMap(new WeakHashMap<String, URLConnection>());
 
         @Override
         public InputStream onConnect(String url) {
@@ -336,21 +362,32 @@ public class ImageLoader {
     }
 
     //TODO Essayer de voir comment délégué a une autre méthode getBitmap
-    private Bitmap getBitmap(PhotoToLoad photosLoad, final ResourceConnectionHandler resourceConnectionHandler) throws IOException {
+    private Bitmap getBitmap(PhotoToLoad photosLoad, final ResourceConnectionHandler resourceConnectionHandler) throws Exception {
         String url = photosLoad.url;
-        if (ToolKits.WordFormat.isInteger(url))
-            return Bitmaps.getBitmapFromResource(getContext(),
-                    Integer.valueOf(url));
         int quality = imageQuality;
         if (quality == QUALITY_AUTO && photosLoad.imageView != null) {
-            quality = photosLoad.imageView.getHeight() >= photosLoad.imageView.getWidth() ?
-                    photosLoad.imageView.getHeight() :
-                    photosLoad.imageView.getWidth();
+            quality = Math.max(photosLoad.imageView.getHeight(), photosLoad.imageView.getWidth());
             if (quality == 0) {
                 quality = QUALITY_HIGH;
             } else if (quality <= QUALITY_LOW) {
                 quality = QUALITY_LOW;
             }
+        }
+        Bitmap bitmap;
+        for (BitmapProvider provider : bitmapProviders) {
+            bitmap = provider.getBitmap(url, resourceConnectionHandler, new Triple<>(
+                            photosLoad.imageView != null ? photosLoad.imageView.getHeight() : quality,
+                            photosLoad.imageView != null ? photosLoad.imageView.getWidth() : quality,
+                            quality
+                    )
+            );
+            if (bitmap != null) {
+                return bitmap;
+            }
+        }
+        if (ToolKits.WordFormat.isInteger(url)) {
+            return Bitmaps.getBitmapFromResource(getContext(),
+                    Integer.valueOf(url));
         }
         return getBitmap(url, useFileCache ? fileCache : null, useMemoryCache ? memoryCache : null, quality, resourceConnectionHandler);
     }
@@ -590,12 +627,12 @@ public class ImageLoader {
 //            executorService.shutdownNow();
 ////            executorService = Executors.newFixedThreadPool(SIZE_POOL_THREAD_REMOTE);
 //        }
-////        if (executorServiceLocalStorage != null) {
-////            executorServiceLocalStorage.shutdownNow();
-////            executorServiceLocalStorage = Executors.newFixedThreadPool(SIZE_POOL_THREAD_LOCAL);
-////        }
-//    }
 
+    /// /        if (executorServiceLocalStorage != null) {
+    /// /            executorServiceLocalStorage.shutdownNow();
+    /// /            executorServiceLocalStorage = Executors.newFixedThreadPool(SIZE_POOL_THREAD_LOCAL);
+    /// /        }
+//    }
     public boolean stop() {
         try {
             if (executorService != null) {
@@ -730,6 +767,10 @@ public class ImageLoader {
             return null;
         }
         return getBitmapFromPath(file.getAbsolutePath());
+    }
+
+    public interface BitmapProvider {
+        Bitmap getBitmap(String uri, ResourceConnectionHandler resourceConnectionHandler, Triple<Integer, Integer, Integer> targetHeightWidthTriplet) throws Exception;
     }
 
 //    public Cache< Bitmap> getCache() {

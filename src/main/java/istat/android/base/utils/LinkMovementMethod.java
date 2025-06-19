@@ -43,13 +43,13 @@ public class LinkMovementMethod extends android.text.method.LinkMovementMethod {
         NONE
     }
 
-//    /**
+    //    /**
 //     * Interface used to handle Long clicks on the {@link TextView} and taps
 //     * on the phone, web, mail links inside of {@link TextView}.
 //     */
     public interface OnTextViewClickMovementListener {
 
-//        /**
+        //        /**
 //         * This method will be invoked when user press and hold
 //         * finger on the {@link TextView}
 //         *
@@ -58,11 +58,11 @@ public class LinkMovementMethod extends android.text.method.LinkMovementMethod {
 //         */
         void onLinkClicked(final String linkText, final LinkType linkType, String url);
 
-//        /**
+        //        /**
 //         * @param text Whole text of {@link TextView}
 //         */
-default void onLongClick(final String text) {
-}
+        default void onLongClick(final String text) {
+        }
     }
 
 

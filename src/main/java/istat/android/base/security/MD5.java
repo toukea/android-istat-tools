@@ -14,6 +14,10 @@ public class MD5 {
     }
 
     public static byte[] createChecksum(InputStream fis) throws NoSuchAlgorithmException, IOException {
+        return createChecksum(fis, true);
+    }
+
+    public static byte[] createChecksum(InputStream fis, boolean closeStream) throws NoSuchAlgorithmException, IOException {
         byte[] buffer = new byte[1024];
         MessageDigest complete = MessageDigest.getInstance("MD5");
         int numRead;
@@ -24,8 +28,9 @@ public class MD5 {
                 complete.update(buffer, 0, numRead);
             }
         } while (numRead != -1);
-
-        fis.close();
+        if (closeStream) {
+            fis.close();
+        }
         return complete.digest();
     }
 
@@ -70,7 +75,11 @@ public class MD5 {
     }
 
     public static String computeMd5Checksum(InputStream inputStream) throws NoSuchAlgorithmException, IOException {
-        byte[] b = createChecksum(inputStream);
+        return computeMd5Checksum(inputStream, true);
+    }
+
+    public static String computeMd5Checksum(InputStream inputStream, boolean closeStream) throws NoSuchAlgorithmException, IOException {
+        byte[] b = createChecksum(inputStream, closeStream);
         String result = "";
 
         for (int i = 0; i < b.length; i++) {

@@ -5,13 +5,13 @@ import android.util.SparseArray;
 import java.util.ArrayList;
 import java.util.List;
 
+//TODO on peut ajouter a cela une notion de source et de destination.
 public class ExecutionJournal<Data> {
     final static int
             STATE_UNKNOWN = 0,
             STATE_SUCCESS = 255,
             STATE_PARTIAL_SUCCESS = 127,
             STATE_FAILED = 111;
-    String destinationPath;
     List<Data> data = new ArrayList<>();
     final SparseArray<Throwable> errorMap = new SparseArray<>();
 
@@ -27,8 +27,12 @@ public class ExecutionJournal<Data> {
         return data != null ? data.size() : 0;
     }
 
-    public String getDestinationPath() {
-        return destinationPath;
+    public List<Throwable> getErrors() {
+        List<Throwable> output = new ArrayList<>();
+        for (Data erroredData : getErrorData()) {
+            output.add(getError(erroredData));
+        }
+        return output;
     }
 
     public int getState() {
@@ -47,12 +51,28 @@ public class ExecutionJournal<Data> {
         return STATE_UNKNOWN;
     }
 
+    public boolean hasError(Data item) {
+        int itemIndex = data.indexOf(item);
+        if (itemIndex < 0) {
+            return false;
+        }
+        return hasError(itemIndex);
+    }
+
     public boolean hasError(int index) {
         return errorMap.get(index) != null;
     }
 
     public boolean hasErrors() {
         return errorMap.size() > 0;
+    }
+
+    public Throwable getError(Data item) {
+        int itemIndex = data.indexOf(item);
+        if (itemIndex < 0) {
+            return null;
+        }
+        return getError(itemIndex);
     }
 
     public Throwable getError(int index) {
@@ -68,7 +88,7 @@ public class ExecutionJournal<Data> {
     }
 
     public List<Integer> getErrorIndex() {
-        List<Integer> index = new ArrayList();
+        List<Integer> index = new ArrayList<>();
         for (int i = 0; i < errorMap.size(); i++) {
             index.add(errorMap.keyAt(i));
         }
@@ -76,7 +96,7 @@ public class ExecutionJournal<Data> {
     }
 
     public List<Data> getErrorData() {
-        List<Data> index = new ArrayList();
+        List<Data> index = new ArrayList<>();
         int key;
         for (int i = 0; i < errorMap.size(); i++) {
             key = errorMap.keyAt(i);
@@ -97,7 +117,7 @@ public class ExecutionJournal<Data> {
             return this;
         }
 
-        public Builder<Data> setFailure(Data data, Exception cause) {
+        public Builder<Data> setFailure(Data data, Throwable cause) {
             output.data.add(data);
             output.errorMap.put(output.data.size() - 1, cause);
             return this;

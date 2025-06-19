@@ -26,11 +26,11 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class AES {
     final static String CIPHER_ALGORITHM = "AES";
-    final static int DEFAULT_SALT_LEN = 8;
+    final static int DEFAULT_SALT_LENGTH = 8;
     public static final int DEFAULT_KEY_LENGTH_BITS = 128;    // see notes below where this is used.
     public static final int DEFAULT_ITERATIONS = 65536;
     public static final int DEFAULT_MAX_FILE_BUF = 1024;
-    static final byte[] DEFAULT_SALT = new byte[DEFAULT_SALT_LEN];
+    static final byte[] DEFAULT_SALT = new byte[DEFAULT_SALT_LENGTH];
     byte[] salt = null;
     private int keyLengthBits = DEFAULT_KEY_LENGTH_BITS;    // see notes below where this is used.
     private int iterations = DEFAULT_ITERATIONS;
@@ -49,7 +49,7 @@ public class AES {
     public byte[] getSalt() {
         if (salt == null || salt.length == 0) {
             // crate secureRandom salt and store  as member var for later use
-            salt = new byte[DEFAULT_SALT_LEN];
+            salt = new byte[DEFAULT_SALT_LENGTH];
 //            SecureRandom rnd = new SecureRandom();
 //            rnd.nextBytes(salt);
         }
@@ -305,16 +305,16 @@ public class AES {
         }
     }
 
-    public String encrypt(byte[] clearBytes, String password)
+    public String encryptByte(byte[] clearBytes, String password)
             throws Exception {
         byte[] rawKey = createBytePassword(password);
-        byte[] result = encrypt(rawKey, clearBytes);
+        byte[] result = encryptByte(rawKey, clearBytes);
         return toHex(result);
     }
 
-    public String encrypt(String cleartext, String password)
+    public String encryptString(String cleartext, String password)
             throws Exception {
-        return encrypt(cleartext.getBytes(), password);
+        return encryptByte(cleartext.getBytes(), password);
     }
 
     private byte[] createBytePassword(String password) {
@@ -340,7 +340,7 @@ public class AES {
         return bytes;
     }
 
-    public String decrypt(byte[] encryptedStringBytes, String password)
+    public String decryptByte(byte[] encryptedStringBytes, String password)
             throws Exception {
 
         byte[] enc = toByte(new String(encryptedStringBytes));
@@ -348,7 +348,7 @@ public class AES {
         return new String(result);
     }
 
-    public String decrypt(String encrypted, String password)
+    public String decryptString(String encrypted, String password)
             throws Exception {
 
         byte[] enc = toByte(encrypted);
@@ -370,12 +370,11 @@ public class AES {
     }
 
 
-    private byte[] encrypt(byte[] key, byte[] clear) throws Exception {
+    private byte[] encryptByte(byte[] key, byte[] clear) throws Exception {
         Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
         SecretKey skeySpec = getSecretKey(key);
         cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
-        byte[] encrypted = cipher.doFinal(clear);
-        return encrypted;
+        return cipher.doFinal(clear);
     }
 
     private byte[] decryptHexBytes(byte[] encrypted, String password)
@@ -383,8 +382,7 @@ public class AES {
         SecretKey skeySpec = getSecretKey(createBytePassword(password));
         Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
         cipher.init(Cipher.DECRYPT_MODE, skeySpec);
-        byte[] decrypted = cipher.doFinal(encrypted);
-        return decrypted;
+        return cipher.doFinal(encrypted);
     }
 
     public static byte[] toByte(String hexString) {

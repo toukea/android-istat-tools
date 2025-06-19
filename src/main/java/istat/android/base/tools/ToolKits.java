@@ -55,6 +55,7 @@ import androidx.annotation.RequiresApi;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -72,6 +73,7 @@ import java.net.URLConnection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -1890,6 +1892,33 @@ public final class ToolKits {
             }
 
             return (InputStream) tmp;
+        }
+
+        public static InputStream readDataUri(String dataUri) throws IllegalArgumentException {
+            if (dataUri == null || !dataUri.startsWith("data:")) {
+                throw new IllegalArgumentException("Invalid data URI");
+            }
+
+            int commaIndex = dataUri.indexOf(',');
+            if (commaIndex == -1) {
+                throw new IllegalArgumentException("Invalid data URI format: no comma found");
+            }
+
+            String metadata = dataUri.substring(0, commaIndex);
+            String base64Data = dataUri.substring(commaIndex + 1);
+
+            // Vérifie si les données sont encodées en base64
+            if (!metadata.contains(";base64")) {
+                throw new IllegalArgumentException("Data URI is not base64 encoded");
+            }
+
+            byte[] decodedBytes = null;
+            if (SDK_INT >= Build.VERSION_CODES.O) {
+                decodedBytes = Base64.getDecoder().decode(base64Data);
+            } else {
+                decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT);
+            }
+            return new ByteArrayInputStream(decodedBytes);
         }
     }
 

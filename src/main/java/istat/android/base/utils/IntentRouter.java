@@ -228,9 +228,11 @@ public class IntentRouter {
             if (!TextUtils.isEmpty(uri.getFragment())) {
                 modelIntent.setData(Uri.parse(compute(uri.getFragment())));
             }
-            for (String paramKey : uri.getQueryParameterNames()) {
-                //Il est juste a noter que les paramettre retourné ici on subit un URLDecode.
-                modelIntent.putExtra(paramKey, compute(uri.getQueryParameter(paramKey)));
+            if (!uri.isOpaque()) {
+                for (String paramKey : uri.getQueryParameterNames()) {
+                    //Il est juste a noter que les paramettre retourné ici on subit un URLDecode.
+                    modelIntent.putExtra(paramKey, compute(uri.getQueryParameter(paramKey)));
+                }
             }
             fillIntentWithIntentEmbeddedData(modelIntent, modelIntent);
             if (!prepareIntentRouting(context, modelIntent, null)) {

@@ -16,7 +16,7 @@ public abstract class Worker extends BaseWorker {
         super.onCreate();
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         powerWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, this.getClass().getName());
-        powerWakeLock.acquire();
+        powerWakeLock.acquire(10*60*1000L /*10 minutes*/);
         this.startingTime = System.currentTimeMillis();
     }
 

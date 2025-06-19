@@ -10,7 +10,7 @@ import android.os.Handler;
 public abstract class BaseWorker extends Service {
     protected Handler workerHandler = new Handler();
     int timeOut = 0;
-    private Runnable workerRunnable = new Runnable() {
+    private final Runnable workerRunnable = new Runnable() {
         public void run() {
             BaseWorker.this.executeTimeOut(BaseWorker.this.timeOut);
         }
