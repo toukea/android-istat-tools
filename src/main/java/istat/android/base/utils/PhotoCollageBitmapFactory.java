@@ -2,7 +2,6 @@ package istat.android.base.utils;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.Pair;
 
@@ -17,14 +16,14 @@ public class PhotoCollageBitmapFactory {
 
     public static Bitmap createBitmap(List<Bitmap> bitmaps,
                                       Pair<Integer, Integer> outputWidthHeightPair) {
-        return createBitmap(bitmaps, outputWidthHeightPair, CropType.CENTER_CROP, 1, 1);
+        return createBitmap(bitmaps, outputWidthHeightPair, CropType.CENTER_CROP, 1, 1, null);
 
     }
 
     public static Bitmap createBitmap(List<Bitmap> bitmaps,
                                       Pair<Integer, Integer> outputWidthHeightPair,
                                       CropType cropType) {
-        return createBitmap(bitmaps, outputWidthHeightPair, cropType, 1, 1);
+        return createBitmap(bitmaps, outputWidthHeightPair, cropType, 1, 1, null);
 
     }
 
@@ -32,61 +31,118 @@ public class PhotoCollageBitmapFactory {
                                       Pair<Integer, Integer> outputWidthHeightPair,
                                       CropType cropType,
                                       int marginHorizontal,
-                                      int marginVertical) {
+                                      int marginVertical,
+                                      Integer backgroundColor) {
 
         if (bitmaps == null || bitmaps.isEmpty()) return null;
 
         int outWidth = outputWidthHeightPair.first;
         int outHeight = outputWidthHeightPair.second;
+
+        if (marginHorizontal * 2 >= outWidth || marginVertical * 2 >= outHeight) {
+            throw new IllegalArgumentException("Margins are too large compared to the output size.");
+        }
+
         int total = bitmaps.size();
-
         Bitmap result = Bitmap.createBitmap(outWidth, outHeight, Bitmap.Config.ARGB_8888);
+        if (backgroundColor != null) {
+            result.eraseColor(backgroundColor);
+        }
+
         Canvas canvas = new Canvas(result);
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-        if (total == 1) {
-            Rect dst = applyMargin(new Rect(0, 0, outWidth, outHeight), marginHorizontal, marginVertical);
-            drawBitmap(canvas, bitmaps.get(0), dst, cropType);
-        } else if (total == 2) {
-            Rect dst1 = applyMargin(new Rect(0, 0, outWidth / 2, outHeight), marginHorizontal, marginVertical);
-            Rect dst2 = applyMargin(new Rect(outWidth / 2, 0, outWidth, outHeight), marginHorizontal, marginVertical);
-            drawBitmap(canvas, bitmaps.get(0), dst1, cropType);
-            drawBitmap(canvas, bitmaps.get(1), dst2, cropType);
-        } else {
-            // Première image en haut
-            int firstHeight = outHeight / 2;
-            Rect firstRect = applyMargin(new Rect(0, 0, outWidth, firstHeight), marginHorizontal, marginVertical);
-            drawBitmap(canvas, bitmaps.get(0), firstRect, cropType);
-
-            // Images restantes
-            int remaining = total - 1;
-            int columns = Math.max(2, (int) Math.ceil(Math.sqrt(remaining)));
-            int rows = (int) Math.ceil((double) remaining / columns);
-
-            int totalHMargin = (columns + 1) * marginHorizontal;
-            int totalVMargin = (rows + 1) * marginVertical;
-            int availableHeight = outHeight - firstHeight;
-
-            int cellWidth = (outWidth - totalHMargin) / columns;
-            int cellHeight = (availableHeight - totalVMargin) / rows;
-
-            int index = 1;
-            for (int row = 0; row < rows && index < total; row++) {
-                for (int col = 0; col < columns && index < total; col++) {
-                    int left = marginHorizontal + col * (cellWidth + marginHorizontal);
-                    int top = firstHeight + marginVertical + row * (cellHeight + marginVertical);
-                    int right = left + cellWidth;
-                    int bottom = top + cellHeight;
-
-                    Rect dst = new Rect(left, top, right, bottom);
-                    drawBitmap(canvas, bitmaps.get(index), dst, cropType);
-                    index++;
+        int index = 0;
+        switch (total) {
+            case 1: {
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(0, 0, outWidth, outHeight), marginHorizontal, marginVertical), cropType);
+                break;
+            }
+            case 2: {
+                int w = outWidth / 2;
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(0, 0, w, outHeight), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(w, 0, outWidth, outHeight), marginHorizontal, marginVertical), cropType);
+                break;
+            }
+            case 3: {
+                int w = outWidth / 2;
+                int h = outHeight / 2;
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(0, 0, w, outHeight), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(w, 0, outWidth, h), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(w, h, outWidth, outHeight), marginHorizontal, marginVertical), cropType);
+                break;
+            }
+            case 4: {
+                int w = outWidth / 2;
+                int h = outHeight / 2;
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(0, 0, w, h), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(0, h, w, outHeight), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(w, 0, outWidth, h), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(w, h, outWidth, outHeight), marginHorizontal, marginVertical), cropType);
+                break;
+            }
+            case 5: {
+                int w = outWidth / 3;
+                int h = outHeight / 2;
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(0, 0, w, h), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(w, 0, 2 * w, h), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(0, h, w, outHeight), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(w, h, 2 * w, outHeight), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(2 * w, h, outWidth, outHeight), marginHorizontal, marginVertical), cropType);
+                break;
+            }
+            case 6: {
+                int w = outWidth / 3;
+                int h = outHeight / 2;
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(0, 0, w, h), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(w, 0, 2 * w, h), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(2 * w, 0, outWidth, h), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(0, h, w, outHeight), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(w, h, 2 * w, outHeight), marginHorizontal, marginVertical), cropType);
+                drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(2 * w, h, outWidth, outHeight), marginHorizontal, marginVertical), cropType);
+                break;
+            }
+            case 7:
+            case 8:
+            case 9:
+            case 10: {
+                int columns = 3;
+                int rows = (int) Math.ceil(total / 3.0);
+                int cellWidth = outWidth / columns;
+                int cellHeight = outHeight / rows;
+                for (int r = 0; r < rows && index < total; r++) {
+                    for (int c = 0; c < columns && index < total; c++) {
+                        int left = c * cellWidth;
+                        int top = r * cellHeight;
+                        int right = left + cellWidth;
+                        int bottom = top + cellHeight;
+                        drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(left, top, right, bottom), marginHorizontal, marginVertical), cropType);
+                    }
                 }
+                break;
+            }
+            default: {
+                // Fallback pour 11 et +
+                int columns = (int) Math.ceil(Math.sqrt(total));
+                int rows = (int) Math.ceil((double) total / columns);
+                int cellWidth = outWidth / columns;
+                int cellHeight = outHeight / rows;
+
+                for (int r = 0; r < rows && index < total; r++) {
+                    for (int c = 0; c < columns && index < total; c++) {
+                        int left = c * cellWidth;
+                        int top = r * cellHeight;
+                        int right = left + cellWidth;
+                        int bottom = top + cellHeight;
+                        drawBitmap(canvas, bitmaps.get(index++), applyMargin(new Rect(left, top, right, bottom), marginHorizontal, marginVertical), cropType);
+                    }
+                }
+                break;
             }
         }
 
         return result;
     }
+
 
     private static Rect applyMargin(Rect rect, int marginH, int marginV) {
         return new Rect(
