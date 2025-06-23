@@ -27,6 +27,15 @@ public class PhotoCollageBitmapFactory {
 
     }
 
+    /**
+     * @param bitmaps               a List of bitmap that should be used for the photo-collage
+     * @param outputWidthHeightPair a Pair that contains in pair.first the Width of the final Bitmap image, and as pair.second the Height of the final Bitmap image
+     * @param cropType              It is an enum that define the crop strategy to use for the images included into the photo-collage. Value are [CENTER_CROP, FIT_CENTER]
+     * @param marginHorizontal      The margin to apply horizontally to each image included inti the photo-collage
+     * @param marginVertical        The margin to apply vertically to each image included intà the photo-collage
+     * @param backgroundColor       The background to apply to the photo collage! If Null, the background will be transparent
+     * @return
+     */
     public static Bitmap createBitmap(List<Bitmap> bitmaps,
                                       Pair<Integer, Integer> outputWidthHeightPair,
                                       CropType cropType,
