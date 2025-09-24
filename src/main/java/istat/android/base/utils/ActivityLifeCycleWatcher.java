@@ -12,25 +12,45 @@ import java.util.HashMap;
  */
 
 public class ActivityLifeCycleWatcher {
-    HashMap<Activity, Application.ActivityLifecycleCallbacks> cache = new HashMap<>();
+    HashMap<Activity, Application.ActivityLifecycleCallbacks> activityApplicationLifecycleCallbackMap = new HashMap<>();
+    HashMap<Application.ActivityLifecycleCallbacks, ActivityLifeCycleListener> activityWatcherLifecycleCallbackMap = new HashMap<>();
 
     public ActivityLifeCycleWatcher() {
 
     }
 
+    public boolean isWatching(Activity activity) {
+        return activityApplicationLifecycleCallbackMap.containsKey(activity);
+    }
+
+    public boolean isWatching(Activity activity, Application.ActivityLifecycleCallbacks lifecycleCallbacks) {
+        return activityApplicationLifecycleCallbackMap.get(activity) == lifecycleCallbacks;
+    }
+
+//    public boolean isWatching(Activity activity, ActivityLifeCycleListener lifecycleCallbacks) {
+//        Application.ActivityLifecycleCallbacks applicationCallback = activityApplicationLifecycleCallbackMap.get(activity);
+//
+//    }
+
     @SuppressLint("NewApi")
-    public void startWatching(Activity activity, ActivityLifeCycleListener callbacks) {
-        Application.ActivityLifecycleCallbacks callbacks1 = createInternalCallback(activity, callbacks);
-        cache.put(activity, callbacks1);
+    public void startWatching(Activity activity, ActivityLifeCycleListener watcherCallback) {
+        Application.ActivityLifecycleCallbacks callbacks1 = createInternalCallback(activity, watcherCallback);
+        activityApplicationLifecycleCallbackMap.put(activity, callbacks1);
+        activityWatcherLifecycleCallbackMap.put(callbacks1, watcherCallback);
         activity.getApplication().registerActivityLifecycleCallbacks(callbacks1);
+    }
+
+    public void startWatching(Activity activity, Application.ActivityLifecycleCallbacks callbacks) {
+        activityApplicationLifecycleCallbackMap.put(activity, callbacks);
+        activity.getApplication().registerActivityLifecycleCallbacks(callbacks);
     }
 
     @SuppressLint("NewApi")
     public void stopWatching(Activity activity) {
         if (activity != null) {
-            Application.ActivityLifecycleCallbacks callbacks = cache.get(activity);
+            Application.ActivityLifecycleCallbacks callbacks = activityApplicationLifecycleCallbackMap.get(activity);
             activity.getApplication().unregisterActivityLifecycleCallbacks(callbacks);
-            cache.remove(callbacks);
+            activityApplicationLifecycleCallbackMap.remove(activity);
         }
     }
 
@@ -91,47 +111,54 @@ public class ActivityLifeCycleWatcher {
     public interface ActivityLifeCycleListener {
 
 
-        void onActivityCreated(Bundle savedInstanceState);
+        default void onActivityCreated(Bundle savedInstanceState) {
+        }
 
-        void onActivityStarted();
+        default void onActivityStarted() {
+        }
 
-        void onActivityResumed();
+        default void onActivityResumed() {
+        }
 
-        void onActivityPaused();
+        default void onActivityPaused() {
+        }
 
-        void onActivityStopped();
+        default void onActivityStopped() {
+        }
 
-        void onActivitySaveInstanceState(Bundle outState);
+        default void onActivitySaveInstanceState(Bundle outState) {
+        }
 
-        void onActivityDestroyed();
+        default void onActivityDestroyed() {
+        }
     }
 
-    public interface  DefaultActivityLifeCycleListener extends ActivityLifeCycleListener{
-        default void onActivityCreated(Bundle savedInstanceState){
+    public interface DefaultActivityLifeCycleListener extends ActivityLifeCycleListener {
+        default void onActivityCreated(Bundle savedInstanceState) {
 
         }
 
-        default void onActivityStarted(){
+        default void onActivityStarted() {
 
         }
 
-        default void onActivityResumed(){
+        default void onActivityResumed() {
 
         }
 
-        default void onActivityPaused(){
+        default void onActivityPaused() {
 
         }
 
-        default void onActivityStopped(){
+        default void onActivityStopped() {
 
         }
 
-        default void onActivitySaveInstanceState(Bundle outState){
+        default void onActivitySaveInstanceState(Bundle outState) {
 
         }
 
-        default void onActivityDestroyed(){
+        default void onActivityDestroyed() {
 
         }
     }
