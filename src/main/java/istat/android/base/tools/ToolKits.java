@@ -56,6 +56,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -109,6 +110,16 @@ import istat.android.base.interfaces.Decoder;
  */
 public final class ToolKits {
     public ToolKits() {
+    }
+
+    private static boolean isAndroidOs() {
+        String osName = System.getProperty("os.name").toLowerCase();
+        if ("linux".equals(osName)) {
+            if (System.getProperty("java.specification.vendor", "linux").toLowerCase().contains("android")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static final class Appearance {
@@ -1732,6 +1743,27 @@ public final class ToolKits {
         public static final int DEFAULT_BUFFER_SIZE = 8192;
 
         private Stream() {
+        }
+
+        @SuppressLint("NewApi")
+        public static String toDataUri(InputStream inputStream, String mimeType) throws IOException {
+            if (inputStream == null) {
+                throw new IllegalArgumentException("InputStream cannot be null");
+            }
+            if (mimeType == null || mimeType.isEmpty()) {
+                throw new IllegalArgumentException("mimeType cannot be null or empty");
+            }
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                baos.write(buffer, 0, bytesRead);
+            }
+
+            byte[] data = baos.toByteArray();
+            String base64 = isAndroidOs() ? android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP) : java.util.Base64.getEncoder().encodeToString(data);
+            return "data:" + mimeType + ";base64," + base64;
         }
 
         public static final String streamToString(InputStream inp, String encoding) {

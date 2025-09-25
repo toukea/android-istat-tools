@@ -1,14 +1,6 @@
 package istat.android.base.tools;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.ByteBuffer;
-
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
@@ -21,6 +13,13 @@ import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Base64;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.ByteBuffer;
 
 /*
  * Copyright (C) 2014 Istat Dev.
@@ -145,12 +144,12 @@ public class Bitmaps {
         return im;
     }
 
-    public static Bitmap getCroppedBitmap(Bitmap bmp, int radius) {
+    public static Bitmap getCroppedBitmap(Bitmap bmp, int radiusPixel) {
         Bitmap sbmp;
 
-        if (bmp.getWidth() != radius || bmp.getHeight() != radius) {
+        if (bmp.getWidth() != radiusPixel || bmp.getHeight() != radiusPixel) {
             float smallest = Math.min(bmp.getWidth(), bmp.getHeight());
-            float factor = smallest / radius;
+            float factor = smallest / radiusPixel;
             sbmp = Bitmap.createScaledBitmap(bmp,
                     (int) (bmp.getWidth() / factor),
                     (int) (bmp.getHeight() / factor), false);
@@ -158,20 +157,20 @@ public class Bitmaps {
             sbmp = bmp;
         }
 
-        Bitmap output = Bitmap.createBitmap(radius, radius, Config.ARGB_8888);
+        Bitmap output = Bitmap.createBitmap(radiusPixel, radiusPixel, Config.ARGB_8888);
         Canvas canvas = new Canvas(output);
 
         final String color = "#BAB399";
         final Paint paint = new Paint();
-        final Rect rect = new Rect(0, 0, radius, radius);
+        final Rect rect = new Rect(0, 0, radiusPixel, radiusPixel);
 
         paint.setAntiAlias(true);
         paint.setFilterBitmap(true);
         paint.setDither(true);
         canvas.drawARGB(0, 0, 0, 0);
         paint.setColor(Color.parseColor(color));
-        canvas.drawCircle(radius / 2, radius / 2,
-                radius / 2, paint);
+        canvas.drawCircle(radiusPixel / 2, radiusPixel / 2,
+                radiusPixel / 2, paint);
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
         canvas.drawBitmap(sbmp, rect, rect, paint);
 

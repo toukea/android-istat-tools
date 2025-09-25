@@ -64,7 +64,7 @@ public class ExampleUnitTest {
 
     @Test
     public void htmlEcapeTest() {
-        String source = "bonjour les ami: \"Helooow\"";
+        String source = "bonjour les ami: \"Helooow\".\nI am a boy!";
         String htmlStringUtilEscape = HtmlStringUtils.encode(source);
         String htmlStringUtilDecode = HtmlStringUtils.decode(htmlStringUtilEscape);
         assertEquals(source, htmlStringUtilDecode);

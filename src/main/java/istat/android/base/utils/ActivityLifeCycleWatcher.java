@@ -13,7 +13,7 @@ import java.util.HashMap;
 
 public class ActivityLifeCycleWatcher {
     HashMap<Activity, Application.ActivityLifecycleCallbacks> activityApplicationLifecycleCallbackMap = new HashMap<>();
-    HashMap<Application.ActivityLifecycleCallbacks, ActivityLifeCycleListener> activityWatcherLifecycleCallbackMap = new HashMap<>();
+    HashMap<Application.ActivityLifecycleCallbacks, ActivityLifeCycleListener> applicationAndWatcherCallbackMap = new HashMap<>();
 
     public ActivityLifeCycleWatcher() {
 
@@ -27,17 +27,17 @@ public class ActivityLifeCycleWatcher {
         return activityApplicationLifecycleCallbackMap.get(activity) == lifecycleCallbacks;
     }
 
-//    public boolean isWatching(Activity activity, ActivityLifeCycleListener lifecycleCallbacks) {
-//        Application.ActivityLifecycleCallbacks applicationCallback = activityApplicationLifecycleCallbackMap.get(activity);
-//
-//    }
+    public boolean isWatching(Activity activity, ActivityLifeCycleListener lifecycleCallbacks) {
+        Application.ActivityLifecycleCallbacks applicationCallback = activityApplicationLifecycleCallbackMap.get(activity);
+        return applicationAndWatcherCallbackMap.get(applicationCallback) == lifecycleCallbacks;
+    }
 
     @SuppressLint("NewApi")
     public void startWatching(Activity activity, ActivityLifeCycleListener watcherCallback) {
-        Application.ActivityLifecycleCallbacks callbacks1 = createInternalCallback(activity, watcherCallback);
-        activityApplicationLifecycleCallbackMap.put(activity, callbacks1);
-        activityWatcherLifecycleCallbackMap.put(callbacks1, watcherCallback);
-        activity.getApplication().registerActivityLifecycleCallbacks(callbacks1);
+        Application.ActivityLifecycleCallbacks applicationCallback = createInternalCallback(activity, watcherCallback);
+        activityApplicationLifecycleCallbackMap.put(activity, applicationCallback);
+        applicationAndWatcherCallbackMap.put(applicationCallback, watcherCallback);
+        activity.getApplication().registerActivityLifecycleCallbacks(applicationCallback);
     }
 
     public void startWatching(Activity activity, Application.ActivityLifecycleCallbacks callbacks) {
@@ -48,9 +48,12 @@ public class ActivityLifeCycleWatcher {
     @SuppressLint("NewApi")
     public void stopWatching(Activity activity) {
         if (activity != null) {
-            Application.ActivityLifecycleCallbacks callbacks = activityApplicationLifecycleCallbackMap.get(activity);
-            activity.getApplication().unregisterActivityLifecycleCallbacks(callbacks);
-            activityApplicationLifecycleCallbackMap.remove(activity);
+            Application.ActivityLifecycleCallbacks applicationCallback = activityApplicationLifecycleCallbackMap.get(activity);
+            if (applicationCallback != null) {
+                activity.getApplication().unregisterActivityLifecycleCallbacks(applicationCallback);
+                activityApplicationLifecycleCallbackMap.remove(activity);
+                applicationAndWatcherCallbackMap.remove(applicationCallback);
+            }
         }
     }
 

@@ -148,7 +148,7 @@ public class Language {
     }
 
 
-    private Application.ActivityLifecycleCallbacks mActivityLifeCyLifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
+    private final Application.ActivityLifecycleCallbacks mActivityLifeCyLifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
             if (!openedActivities.contains(activity)) {
