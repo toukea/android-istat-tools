@@ -1974,6 +1974,15 @@ public final class ToolKits {
         public Word() {
         }
 
+        /**
+         * Determine wheither or not the texte is chineese, japaneese or korean
+         * @param text
+         * @return
+         */
+        public static boolean containsCJK(String text) {
+            return Pattern.compile("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{IsHangul}]").matcher(text).find();
+        }
+
         public static final String parseString(Object obj) {
             return obj == null ? "" : obj.toString();
         }
