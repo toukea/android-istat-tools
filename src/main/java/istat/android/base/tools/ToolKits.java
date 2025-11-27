@@ -1366,24 +1366,35 @@ public final class ToolKits {
             return currentOrientation;
         }
 
-        public static final void setFullScreen(Activity activity) {
+        public static void setFullScreen(Activity activity) {
             activity.getWindow().setFlags(1024, 1024);
         }
 
-        public static final void setPortrait(Activity activity) {
-            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        public static void setPortrait(Activity activity) {
+            _setRequestedOrientation(activity, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         }
 
-        public static final void setLandScape(Activity activity) {
-            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        public static void setLandScape(Activity activity) {
+            _setRequestedOrientation(activity, ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
 
-        public static final void setNoSensor(Activity activity) {
-            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
+        public static void setNoSensor(Activity activity) {
+            _setRequestedOrientation(activity, ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
         }
 
-        public static final void setFullSensor(Activity activity) {
-            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+        public static void setFullSensor(Activity activity) {
+            _setRequestedOrientation(activity, ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+        }
+
+        private static void _setRequestedOrientation(Activity activity, int orientation) {
+            if (activity == null || activity.isFinishing()) {
+                return;
+            }
+            try {
+                activity.setRequestedOrientation(orientation);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         public static final Point getScreenDimension(Activity context) {
@@ -1976,11 +1987,13 @@ public final class ToolKits {
 
         /**
          * Determine wheither or not the texte is chineese, japaneese or korean
+         *
          * @param text
          * @return
          */
         public static boolean containsCJK(String text) {
-            return Pattern.compile("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{IsHangul}]").matcher(text).find();
+//            return Pattern.compile("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{IsHangul}]").matcher(text).find();
+            return Pattern.compile("[\\p{sc=Han}\\p{sc=Hiragana}\\p{sc=Katakana}\\p{sc=Hangul}]").matcher(text).find();
         }
 
         public static final String parseString(Object obj) {
