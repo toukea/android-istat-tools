@@ -5,11 +5,15 @@ import static istat.android.base.tools.Bitmaps.getBitmapFromPath;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.widget.ImageView;
 
+import androidx.exifinterface.media.ExifInterface;
+
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -405,6 +409,7 @@ public class ImageLoader {
             } else {
                 b = decodeFile(cachedFile, quality);
             }
+            b = applyExifOrientationIfNeeded(cachedFile.getAbsolutePath(), b);
             if (b != null)
                 return b;
         }
@@ -426,6 +431,7 @@ public class ImageLoader {
                 } else {
                     bitmap = decodeFile(cachedFile, quality);
                 }
+                bitmap = applyExifOrientationIfNeeded(cachedFile.getAbsolutePath(), bitmap);
             } else {
                 ByteArrayOutputStream os = new ByteArrayOutputStream();
                 ToolKits.Stream.copyStream(is, os);
@@ -436,6 +442,7 @@ public class ImageLoader {
                 } else {
                     bitmap = decodeByte(bytes, quality);
                 }
+                bitmap = applyExifOrientationIfNeeded(bytes, bitmap);
                 os.close();
             }
             if (memoryCache != null) {
@@ -538,6 +545,87 @@ public class ImageLoader {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private static Bitmap applyExifOrientationIfNeeded(String imagePath, Bitmap bitmap) {
+        if (bitmap == null || imagePath == null) {
+            return bitmap;
+        }
+        try {
+            File imageFile = new File(imagePath);
+            if (!imageFile.exists()) {
+                return bitmap;
+            }
+            ExifInterface exif = new ExifInterface(imagePath);
+            return applyExifOrientationIfNeeded(bitmap, exif);
+        } catch (Exception e) {
+            Log.w(TAG, "Unable to apply Exif orientation for " + imagePath, e);
+            return bitmap;
+        }
+    }
+
+    private static Bitmap applyExifOrientationIfNeeded(byte[] imageBytes, Bitmap bitmap) {
+        if (bitmap == null || imageBytes == null) {
+            return bitmap;
+        }
+        try (ByteArrayInputStream stream = new ByteArrayInputStream(imageBytes)) {
+            ExifInterface exif = new ExifInterface(stream);
+            return applyExifOrientationIfNeeded(bitmap, exif);
+        } catch (Exception e) {
+            Log.w(TAG, "Unable to apply Exif orientation from stream", e);
+            return bitmap;
+        }
+    }
+
+    private static Bitmap applyExifOrientationIfNeeded(Bitmap bitmap, ExifInterface exif) {
+        if (bitmap == null || exif == null) {
+            return bitmap;
+        }
+        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+        Matrix matrix = buildExifTransform(orientation);
+        if (matrix == null) {
+            return bitmap;
+        }
+        try {
+            return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        } catch (RuntimeException | OutOfMemoryError e) {
+            Log.w(TAG, "Failed to rotate bitmap based on Exif orientation", e);
+            return bitmap;
+        }
+    }
+
+    private static Matrix buildExifTransform(int orientation) {
+        Matrix matrix = new Matrix();
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                matrix.setScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                matrix.setRotate(180);
+                break;
+            case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+                matrix.setScale(1, -1);
+                break;
+            case ExifInterface.ORIENTATION_TRANSPOSE:
+                matrix.setRotate(90);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                matrix.setRotate(90);
+                break;
+            case ExifInterface.ORIENTATION_TRANSVERSE:
+                matrix.setRotate(-90);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                matrix.setRotate(-90);
+                break;
+            case ExifInterface.ORIENTATION_NORMAL:
+            case ExifInterface.ORIENTATION_UNDEFINED:
+            default:
+                return null;
+        }
+        return matrix;
     }
 
     //    boolean imageViewReused(PhotoToLoad photoToLoad) {
@@ -685,7 +773,7 @@ public class ImageLoader {
     }
 
     public interface LoadCallback {
-        boolean onLoad(PhotoToLoad phLoad);
+        default boolean onLoad(PhotoToLoad phLoad){return false;}
 
         /**
          * @param phLoad
@@ -697,9 +785,9 @@ public class ImageLoader {
         boolean onLoadSucceed(PhotoToLoad phLoad, Bitmap bitmap);
 
 
-        boolean onLoadError(PhotoToLoad phLoad, Throwable error);
+        default boolean onLoadError(PhotoToLoad phLoad, Throwable error){return false;}
 
-        void onLoadCompleted(PhotoToLoad phLoad, boolean success);
+        default void onLoadCompleted(PhotoToLoad phLoad, boolean success){}
 
     }
 

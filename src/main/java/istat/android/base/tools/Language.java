@@ -63,7 +63,11 @@ public class Language {
 
     public static Language retrieveOrInitializeInstance(Application application) {
         if (instance != null) {
-            return getInstance();
+            instance =  getInstance();
+            if(instance.application == null) {
+                instance.application = application;
+            }
+            return instance;
         } else {
             return initialize(application);
         }

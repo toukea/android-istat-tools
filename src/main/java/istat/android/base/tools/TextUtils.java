@@ -10,7 +10,7 @@ public class TextUtils {
     }
 
     public static boolean isEmpty(Object o) {
-        return o == null || o.toString().length() == 0;
+        return o == null || o.toString().isEmpty();
     }
 
     public static String trim(CharSequence s) {
