@@ -212,7 +212,10 @@ public class IntentRouter {
 
     public boolean routeUri(Context context, Uri uri, Bundle intentExtras, Intent modelIntent) {
         if (modelIntent == null) {
-            modelIntent = new Intent();
+            modelIntent = new Intent(Intent.ACTION_VIEW);
+            if (uri != null) {
+                modelIntent.setData(uri);
+            }
         } else {
             modelIntent = new Intent(modelIntent);
         }
@@ -247,7 +250,9 @@ public class IntentRouter {
                     modelIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 }
                 try {
-                    if (modelIntent.getAction() != null || modelIntent.getData() != null || modelIntent.getComponent() != null) {
+                    if (modelIntent.getAction() != null ||
+                            modelIntent.getData() != null ||
+                            modelIntent.getComponent() != null) {
                         context.startActivity(modelIntent);
                     }
                     return true;
@@ -346,7 +351,7 @@ public class IntentRouter {
 
     }
 
-    List<UriIntentRoutHandler> uriIntentRoutHandlers = new ArrayList();
+    List<UriIntentRoutHandler> uriIntentRoutHandlers = new ArrayList<>();
     HashMap<String, Command.Handler> nameCommandHandlerMap = new HashMap<>();
 
     public interface UriIntentRoutHandler {

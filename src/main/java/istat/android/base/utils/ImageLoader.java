@@ -2,6 +2,7 @@ package istat.android.base.utils;
 
 import static istat.android.base.tools.Bitmaps.getBitmapFromPath;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -12,6 +13,9 @@ import android.util.Log;
 import android.widget.ImageView;
 
 import androidx.exifinterface.media.ExifInterface;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleOwner;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -21,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -80,18 +85,19 @@ public class ImageLoader {
     // handler to display images in UI thread
     Handler handler = new Handler(Looper.getMainLooper());
     ConcurrentLinkedQueue<BitmapProvider> bitmapProviders = new ConcurrentLinkedQueue<>();
+    WeakReference<LifecycleOwner> lifecycleOwnerWeakReference;
 
     public ImageLoader(Context context) {
         this(context,
-                BitmapFactory.decodeResource(context.getResources(), DEFAULT_PICTURE_ON_ERROR)
-                , BitmapFactory.decodeResource(context.getResources(), DEFAULT_PICTURE_ON_PROGRESS)
+                Bitmaps.getBitmapFromResource(context, DEFAULT_PICTURE_ON_ERROR)
+                , Bitmaps.getBitmapFromResource(context, DEFAULT_PICTURE_ON_PROGRESS)
         );
 
     }
 
     public ImageLoader(Context context, int errorIcon, int progressIcon) {
-        this(context, BitmapFactory.decodeResource(context.getResources(), errorIcon)
-                , BitmapFactory.decodeResource(context.getResources(), progressIcon));
+        this(context, Bitmaps.getBitmapFromResource(context, errorIcon)
+                , Bitmaps.getBitmapFromResource(context, progressIcon));
     }
 
     public ImageLoader(Context context, Bitmap errorIcon, Bitmap progressIcon) {
@@ -146,7 +152,7 @@ public class ImageLoader {
         (loadErrorIconPlaceHolderThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                errorBitmapHolder = BitmapFactory.decodeResource(getContext().getResources(), icon);
+                errorBitmapHolder = Bitmaps.getBitmapFromResource(getContext(), icon);
                 loadErrorIconPlaceHolderThread = null;
             }
         })).start();
@@ -160,7 +166,7 @@ public class ImageLoader {
         (loadProgressionIconPlaceHolderThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                progressionBitmapHolder = BitmapFactory.decodeResource(getContext().getResources(), icon);
+                progressionBitmapHolder = Bitmaps.getBitmapFromResource(getContext(), icon);
                 loadProgressionIconPlaceHolderThread = null;
             }
         })).start();
@@ -221,7 +227,7 @@ public class ImageLoader {
             notifyImageLoaded(photoToLoad, loadCallback, bitmap);
         } else {
             // queue Photo to download create url
-            Runnable runnable = () ->queuePhoto(path, imageView, loadCallback);
+            Runnable runnable = () -> queuePhoto(path, imageView, loadCallback);
             if (loadDelay > 0) {
                 imageView.postDelayed(runnable, loadDelay);
             } else {
@@ -244,6 +250,11 @@ public class ImageLoader {
 
     public static Bitmap getBitmap(String url, Context activity, int imageQuality) throws IOException {
         return getBitmap(url, new FileCache(activity), new MemoryCache(), imageQuality, DEFAULT_RESOURCE_CONNECTION_HANDLER);
+    }
+
+    public ImageLoader setLifecycleHost(LifecycleOwner lifecycleOwner) {
+        lifecycleOwnerWeakReference = new WeakReference<>(lifecycleOwner);
+        return this;
     }
 
     // Task for the queue
@@ -299,12 +310,7 @@ public class ImageLoader {
 
             } catch (final Throwable th) {
                 th.printStackTrace();
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        notifyImageLoadError(photoToLoad, loadListener, th);
-                    }
-                });
+                handler.post(() -> notifyImageLoadError(photoToLoad, loadListener, th));
             }
         }
     }
@@ -773,7 +779,9 @@ public class ImageLoader {
     }
 
     public interface LoadCallback {
-        default boolean onLoad(PhotoToLoad phLoad){return false;}
+        default boolean onLoad(PhotoToLoad phLoad) {
+            return false;
+        }
 
         /**
          * @param phLoad
@@ -785,9 +793,12 @@ public class ImageLoader {
         boolean onLoadSucceed(PhotoToLoad phLoad, Bitmap bitmap);
 
 
-        default boolean onLoadError(PhotoToLoad phLoad, Throwable error){return false;}
+        default boolean onLoadError(PhotoToLoad phLoad, Throwable error) {
+            return false;
+        }
 
-        default void onLoadCompleted(PhotoToLoad phLoad, boolean success){}
+        default void onLoadCompleted(PhotoToLoad phLoad, boolean success) {
+        }
 
     }
 
@@ -807,6 +818,41 @@ public class ImageLoader {
     }
 
     private void notifyImageLoaded(PhotoToLoad photoToLoad, LoadCallback listener, Bitmap bitmap) {
+        if (lifecycleOwnerWeakReference != null) {
+            LifecycleOwner lifecycleOwner = lifecycleOwnerWeakReference.get();
+            if (lifecycleOwner instanceof Activity activity) {
+                if (activity.isFinishing()) {
+                    return;
+                }
+            }
+            if (lifecycleOwner instanceof Fragment fragment) {
+                if (!fragment.isAdded()) {
+                    return;
+                }
+            }
+        }
+        if (context instanceof LifecycleOwner lifecycleOwner) {
+            if (lifecycleOwner.getLifecycle().getCurrentState() == Lifecycle.State.DESTROYED) {
+                return;
+            }
+        }
+        if (context instanceof Activity activity) {
+            if (activity.isFinishing()) {
+                return;
+            }
+        }
+        if (photoToLoad != null && photoToLoad.imageView != null) {
+            if (photoToLoad.imageView.getContext() instanceof LifecycleOwner lifecycleOwner) {
+                if (lifecycleOwner.getLifecycle().getCurrentState() == Lifecycle.State.DESTROYED) {
+                    return;
+                }
+            }
+            if (photoToLoad.imageView.getContext() instanceof Activity activity) {
+                if (activity.isFinishing()) {
+                    return;
+                }
+            }
+        }
         if (bitmap != null) {
             if (listener == null || !listener.onLoadSucceed(photoToLoad, bitmap)) {
                 if (photoToLoad != null && photoToLoad.imageView != null) {

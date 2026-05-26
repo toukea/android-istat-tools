@@ -10,8 +10,13 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
+import android.content.res.Configuration;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
+
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.content.res.AppCompatResources;
 import android.util.Base64;
 
 import java.io.ByteArrayInputStream;
@@ -138,10 +143,31 @@ public class Bitmaps {
         Bitmap im = null;
         try {
             im = BitmapFactory.decodeResource(ctx.getResources(), resource);
+            if (im != null) {
+                return im;
+            }
+            Drawable drawable = AppCompatResources.getDrawable(withAppNightMode(ctx), resource);
+            if (drawable != null) {
+                im = drawableToBitmap(drawable);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return im;
+    }
+
+    private static Context withAppNightMode(Context ctx) {
+        int nightMode = AppCompatDelegate.getDefaultNightMode();
+        if (nightMode == AppCompatDelegate.MODE_NIGHT_YES
+                || nightMode == AppCompatDelegate.MODE_NIGHT_NO) {
+            int uiNightFlag = (nightMode == AppCompatDelegate.MODE_NIGHT_NO)
+                    ? Configuration.UI_MODE_NIGHT_NO
+                    : Configuration.UI_MODE_NIGHT_YES;
+            Configuration config = new Configuration(ctx.getResources().getConfiguration());
+            config.uiMode = (config.uiMode & ~Configuration.UI_MODE_NIGHT_MASK) | uiNightFlag;
+            return ctx.createConfigurationContext(config);
+        }
+        return ctx;
     }
 
     public static Bitmap getCroppedBitmap(Bitmap bmp, int radiusPixel) {

@@ -7,10 +7,14 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 
 public class SoftKeyboardStateWatcher {
-    public static final int STATE_HIDDEN = 0, STATE_VISIBLE = 1;
+    @Deprecated
+    /**
+     * Deprecated, you should use the static field from [OnKeyboardStateChangedListener]
+     */
+    public static final int STATE_HIDDEN = OnKeyboardStateChangedListener.STATE_HIDDEN, STATE_VISIBLE = OnKeyboardStateChangedListener.STATE_VISIBLE;
     private OnKeyboardStateChangedListener listener;
     private View watchView;
-    private ViewTreeObserver.OnGlobalLayoutListener mOnGlobalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
+    private final ViewTreeObserver.OnGlobalLayoutListener mOnGlobalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
         private final Rect windowVisibleDisplayFrame = new Rect();
         private int lastVisibleDecorViewHeight;
 
@@ -72,6 +76,7 @@ public class SoftKeyboardStateWatcher {
     }
 
     public interface OnKeyboardStateChangedListener {
+        int STATE_HIDDEN = 0, STATE_VISIBLE = 1;
         void onKeyboardStateChanged(int state);
     }
 }
