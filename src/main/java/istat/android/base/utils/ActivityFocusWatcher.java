@@ -8,7 +8,7 @@ public final class ActivityFocusWatcher extends Thread {
 	Activity mActivity;
 	long watchInterval=-1;
 	private boolean run = false;
-	private Handler mHandler;
+	private final Handler mHandler;
 
 	boolean lastState = false;
 

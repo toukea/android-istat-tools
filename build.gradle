@@ -10,7 +10,7 @@ android {
     namespace 'istat.android.base.tools'
     compileSdkVersion 36
     defaultConfig {
-        minSdkVersion 17
+        minSdkVersion 21
         targetSdkVersion 34
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
