@@ -29,6 +29,8 @@ public class IntentRouter {
     public final static String EXTRA_INTENT_ACTION = "intent_action",
             EXTRA_INTENT_FLAGS = "intent_flags",
             EXTRA_INTENT_DATA = "intent_data",
+            EXTRA_INTENT_DATA_SCR = "src",
+            EXTRA_INTENT_TARGET_TYPE_CONTENT_TYPE = "content_type",
             EXTRA_INTENT_DATA_TYPE = "intent_data_type",
             EXTRA_INTENT_TARGET_TYPE = "intent_target_type",
             EXTRA_INTENT_TARGET_CLASS = "intent_target_class",
@@ -169,7 +171,7 @@ public class IntentRouter {
         if (source == null || target == null) {
             return;
         }
-        String dataUri = compute(source.getStringExtra(EXTRA_INTENT_DATA));
+        String dataUri = getDataExtra(source);
         String flags = compute(source.getStringExtra(EXTRA_INTENT_FLAGS));
         String action = compute(source.getStringExtra(EXTRA_INTENT_ACTION));
         if (target.getAction() == null) {
@@ -187,7 +189,7 @@ public class IntentRouter {
             int flagsInt = istat.android.base.tools.ToolKits.Word.parseInt(flags);
             target.setFlags(flagsInt);
         }
-        String mimeType = compute(source.getStringExtra(EXTRA_INTENT_DATA_TYPE));
+        String mimeType = getDataTypeExtra(source);
         if (!TextUtils.isEmpty(dataUri) && !TextUtils.isEmpty(mimeType)) {
             target.setDataAndType(Uri.parse(dataUri), mimeType);
         } else if (!TextUtils.isEmpty(dataUri)) {
@@ -224,6 +226,8 @@ public class IntentRouter {
             if (uri != null) {
                 modelIntent.removeExtra(EXTRA_INTENT_URI);
                 modelIntent.removeExtra(EXTRA_INTENT_DATA);
+                modelIntent.removeExtra(EXTRA_INTENT_DATA_SCR);
+                modelIntent.removeExtra(EXTRA_INTENT_TARGET_TYPE_CONTENT_TYPE);
             }
         }
         if (uri != null) {
@@ -272,6 +276,22 @@ public class IntentRouter {
         }
         uri = intent.getData();
         return routeUri(context, uri, null, intent);
+    }
+
+    private String getDataExtra(Intent source) {
+        String v = compute(source.getStringExtra(EXTRA_INTENT_DATA));
+        if (TextUtils.isEmpty(v)) {
+            v = compute(source.getStringExtra(EXTRA_INTENT_DATA_SCR));
+        }
+        return v;
+    }
+
+    private String getDataTypeExtra(Intent source) {
+        String v = compute(source.getStringExtra(EXTRA_INTENT_DATA_TYPE));
+        if (TextUtils.isEmpty(v)) {
+            v = compute(source.getStringExtra(EXTRA_INTENT_TARGET_TYPE_CONTENT_TYPE));
+        }
+        return v;
     }
 
     private String compute(String original) {
