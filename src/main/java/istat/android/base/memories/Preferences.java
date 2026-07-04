@@ -315,7 +315,11 @@ public class Preferences {
         return Objects.equals(persistedValue, String.valueOf(value));
     }
 
+    public String loadString(String key) {
+        return loadString(key, null);
+    }
+
     public String loadString(String key, String defaultValue) {
-        return load(key, defaultValue);
+        return loadPreferences(this.context, this.file, key, defaultValue, this.mode);
     }
 }
