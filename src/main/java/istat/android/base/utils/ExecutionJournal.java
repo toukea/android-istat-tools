@@ -23,6 +23,25 @@ public class ExecutionJournal<Data> {
         return data;
     }
 
+    public Data getFirstData() {
+        return data != null && !data.isEmpty() ? data.get(0) : null;
+    }
+
+    public Data getFirstSuccess() {
+        List<Data> successList = getSuccess();
+        return successList.isEmpty() ? null : successList.get(0);
+    }
+
+    public List<Data> getSuccess() {
+        List<Data> output = new ArrayList<>();
+        for (Data data1 : data) {
+            if (!hasError(data1)) {
+                output.add(data1);
+            }
+        }
+        return output;
+    }
+
     public int getDataCount() {
         return data != null ? data.size() : 0;
     }
@@ -87,6 +106,10 @@ public class ExecutionJournal<Data> {
         return getDataCount() - getErrorCount();
     }
 
+    public boolean hasSuccess() {
+        return getSuccessCount() > 0;
+    }
+
     public List<Integer> getErrorIndex() {
         List<Integer> index = new ArrayList<>();
         for (int i = 0; i < errorMap.size(); i++) {
@@ -109,15 +132,39 @@ public class ExecutionJournal<Data> {
         return data.size() > index ? data.get(index) : null;
     }
 
+    public Throwable getFirstError() {
+        return getError(0);
+    }
+
     public static class Builder<Data> {
         ExecutionJournal<Data> output = new ExecutionJournal<>();
 
+        /**
+         * Deprecated use pushSuccess
+         * @param data
+         * @return
+         */
+        @Deprecated
         public Builder<Data> setSuccess(Data data) {
+            return pushSuccess(data);
+        }
+
+        public Builder<Data> pushSuccess(Data data) {
             output.data.add(data);
             return this;
         }
 
+        /**
+         * Deprecated use pushFailure
+         * @param data
+         * @param cause
+         * @return
+         */
         public Builder<Data> setFailure(Data data, Throwable cause) {
+            return pushFailure(data, cause);
+        }
+
+        public Builder<Data> pushFailure(Data data, Throwable cause) {
             output.data.add(data);
             output.errorMap.put(output.data.size() - 1, cause);
             return this;

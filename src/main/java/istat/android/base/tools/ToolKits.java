@@ -765,18 +765,24 @@ public final class ToolKits {
             writer.close();
         }
 
-        public static final void appendString(String content, String filePath) throws IOException {
-            if (!(new File(filePath)).getParentFile().exists()) {
-                (new File(filePath)).getParentFile().mkdirs();
+        public static void appendString(String content, String filePath) throws IOException {
+            File destinationFile = new File(filePath);
+            File destinationDirectory = destinationFile.getParentFile();
+            if (destinationDirectory != null && !destinationDirectory.exists()) {
+                if (!destinationDirectory.mkdirs()) {
+                    return;
+                }
             }
-
+            if (!destinationFile.canWrite()) {
+                return;
+            }
             FileWriter writer = new FileWriter(filePath, true);
             writer.append(content);
             writer.flush();
             writer.close();
         }
 
-        public static final boolean tryAppendString(String content, String filePath) {
+        public static boolean tryAppendString(String content, String filePath) {
             try {
                 appendString(content, filePath);
                 return true;
@@ -786,16 +792,43 @@ public final class ToolKits {
             }
         }
 
-        public static final String fileExtension(File file) {
+        public static String fileExtension(File file) {
             return fileExtension(file.getName());
         }
 
-        public static final String fileExtension(String fileUri) {
+        public static String fileExtension(String fileUri) {
             if (fileUri == null) {
                 return null;
             }
             int index = fileUri.lastIndexOf(".") + 1;
             return index > 0 && fileUri.length() > index ? fileUri.substring(index) : "";
+        }
+
+        public static boolean hasFileExtension(String fileUri) {
+            if (TextUtils.isEmpty(fileUri)) {
+                return false;
+            }
+            int endIndex = fileUri.length();
+            int queryIndex = fileUri.indexOf('?');
+            int fragmentIndex = fileUri.indexOf('#');
+            if (queryIndex >= 0) {
+                endIndex = queryIndex;
+            }
+            if (fragmentIndex >= 0 && fragmentIndex < endIndex) {
+                endIndex = fragmentIndex;
+            }
+            int schemeSeparatorIndex = fileUri.indexOf("://");
+            if (schemeSeparatorIndex >= 0) {
+                int pathIndex = fileUri.indexOf('/', schemeSeparatorIndex + 3);
+                if (pathIndex < 0 || pathIndex >= endIndex) {
+                    return false;
+                }
+            }
+            int slashIndex = fileUri.lastIndexOf('/', endIndex - 1);
+            int backslashIndex = fileUri.lastIndexOf('\\', endIndex - 1);
+            int fileNameStartIndex = Math.max(slashIndex, backslashIndex) + 1;
+            int extensionSeparatorIndex = fileUri.lastIndexOf('.', endIndex - 1);
+            return extensionSeparatorIndex > fileNameStartIndex && extensionSeparatorIndex < endIndex - 1;
         }
 
         public static final String fileExt(String url) {
