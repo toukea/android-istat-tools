@@ -111,6 +111,14 @@ public final class SystemBarInsets {
      *                        backgrounds); {@code false} for white icons (dark themes)
      */
     public static void apply(Activity activity, View root, @Nullable View topInsetView, boolean expandTopHeight, @Nullable View bottomPaddingView, @Nullable View bottomMarginView, boolean lightStatusBars) {
+        apply(activity, root, topInsetView, expandTopHeight, bottomPaddingView, bottomMarginView, lightStatusBars, false);
+    }
+
+    /**
+     * Full variant with optional horizontal safe-area handling for display cutouts and side
+     * navigation bars. Existing callers keep their original vertical-only behavior.
+     */
+    public static void apply(Activity activity, View root, @Nullable View topInsetView, boolean expandTopHeight, @Nullable View bottomPaddingView, @Nullable View bottomMarginView, boolean lightStatusBars, boolean applyHorizontalInsets) {
         if (activity == null || root == null) {
             return;
         }
@@ -125,11 +133,15 @@ public final class SystemBarInsets {
         final int bottomBaseMargin = bottomMarginParams != null ? bottomMarginParams.bottomMargin : 0;
 
         ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            int leftInset = applyHorizontalInsets ? systemBars.left : 0;
+            int rightInset = applyHorizontalInsets ? systemBars.right : 0;
             if (topInsetView != null && topInsetView == bottomPaddingView && topPadding != null) {
-                topInsetView.setPadding(topPadding.left, topPadding.top + systemBars.top, topPadding.right, topPadding.bottom + systemBars.bottom);
+                topInsetView.setPadding(topPadding.left + leftInset, topPadding.top + systemBars.top,
+                        topPadding.right + rightInset, topPadding.bottom + systemBars.bottom);
             } else if (topInsetView != null && topPadding != null) {
-                topInsetView.setPadding(topPadding.left, topPadding.top + systemBars.top, topPadding.right, topPadding.bottom);
+                topInsetView.setPadding(topPadding.left + leftInset, topPadding.top + systemBars.top,
+                        topPadding.right + rightInset, topPadding.bottom);
             }
             if (topInsetView != null && expandTopHeight && topBaseHeight > 0) {
                 ViewGroup.LayoutParams params = topInsetView.getLayoutParams();
@@ -137,7 +149,8 @@ public final class SystemBarInsets {
                 topInsetView.setLayoutParams(params);
             }
             if (bottomPaddingView != null && bottomPaddingView != topInsetView && bottomPadding != null) {
-                bottomPaddingView.setPadding(bottomPadding.left, bottomPadding.top, bottomPadding.right, bottomPadding.bottom + systemBars.bottom);
+                bottomPaddingView.setPadding(bottomPadding.left + leftInset, bottomPadding.top,
+                        bottomPadding.right + rightInset, bottomPadding.bottom + systemBars.bottom);
             }
             if (bottomMarginView != null && bottomMarginParams != null) {
                 ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) bottomMarginView.getLayoutParams();
@@ -265,6 +278,13 @@ public final class SystemBarInsets {
      *                          reserve the space without painting anything)
      */
     public static void applyStatusBarOverlay(Activity activity, View root, @Nullable View bottomPaddingView, @ColorInt int overlayColor) {
+        applyStatusBarOverlay(activity, root, bottomPaddingView, overlayColor, false);
+    }
+
+    /**
+     * Status-bar overlay variant with optional horizontal safe-area handling.
+     */
+    public static void applyStatusBarOverlay(Activity activity, View root, @Nullable View bottomPaddingView, @ColorInt int overlayColor, boolean applyHorizontalInsets) {
         if (activity == null || !(root instanceof ViewGroup rootView)) {
             return;
         }
@@ -276,12 +296,15 @@ public final class SystemBarInsets {
 
         final Padding bottomPadding = bottomPaddingView != null ? new Padding(bottomPaddingView) : null;
         ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
             ViewGroup.LayoutParams params = statusBarView.getLayoutParams();
             params.height = systemBars.top;
             statusBarView.setLayoutParams(params);
             if (bottomPaddingView != null && bottomPadding != null) {
-                bottomPaddingView.setPadding(bottomPadding.left, bottomPadding.top, bottomPadding.right, bottomPadding.bottom + systemBars.bottom);
+                int leftInset = applyHorizontalInsets ? systemBars.left : 0;
+                int rightInset = applyHorizontalInsets ? systemBars.right : 0;
+                bottomPaddingView.setPadding(bottomPadding.left + leftInset, bottomPadding.top,
+                        bottomPadding.right + rightInset, bottomPadding.bottom + systemBars.bottom);
             }
             return insets;
         });
@@ -387,6 +410,14 @@ public final class SystemBarInsets {
      * @param toolbar           the inner {@code Toolbar} whose height and top padding are adjusted
      */
     public static void applyCollapsingToolbarInsets(Activity activity, View root, View appBarLayout, View collapsingToolbar, View toolbar) {
+        applyCollapsingToolbarInsets(activity, root, appBarLayout, collapsingToolbar, toolbar, null);
+    }
+
+    /**
+     * Collapsing-toolbar variant that also keeps scrollable content clear of bottom and side
+     * system insets.
+     */
+    public static void applyCollapsingToolbarInsets(Activity activity, View root, View appBarLayout, View collapsingToolbar, View toolbar, @Nullable View bottomPaddingView) {
         if (activity == null || root == null || appBarLayout == null || collapsingToolbar == null || toolbar == null) {
             return;
         }
@@ -394,16 +425,22 @@ public final class SystemBarInsets {
 
         final int toolbarBaseHeight = getActionBarHeight(activity, toolbar);
         final Padding toolbarPadding = new Padding(toolbar);
+        final Padding bottomPadding = bottomPaddingView != null ? new Padding(bottomPaddingView) : null;
 
         ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
             int collapsedHeight = toolbarBaseHeight + systemBars.top;
             ViewGroup.LayoutParams toolbarParams = toolbar.getLayoutParams();
             toolbarParams.height = collapsedHeight;
             toolbar.setLayoutParams(toolbarParams);
-            toolbar.setPadding(toolbarPadding.left, toolbarPadding.top + systemBars.top, toolbarPadding.right, toolbarPadding.bottom);
+            toolbar.setPadding(toolbarPadding.left + systemBars.left, toolbarPadding.top + systemBars.top,
+                    toolbarPadding.right + systemBars.right, toolbarPadding.bottom);
             appBarLayout.setMinimumHeight(collapsedHeight);
             collapsingToolbar.setMinimumHeight(collapsedHeight);
+            if (bottomPaddingView != null && bottomPadding != null) {
+                bottomPaddingView.setPadding(bottomPadding.left + systemBars.left, bottomPadding.top,
+                        bottomPadding.right + systemBars.right, bottomPadding.bottom + systemBars.bottom);
+            }
             appBarLayout.requestLayout();
             collapsingToolbar.requestLayout();
             return insets;

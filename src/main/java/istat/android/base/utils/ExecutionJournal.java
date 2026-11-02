@@ -15,6 +15,10 @@ public class ExecutionJournal<Data> {
     List<Data> data = new ArrayList<>();
     final SparseArray<Throwable> errorMap = new SparseArray<>();
 
+    public static <T> ExecutionJournal<T> empty() {
+        return new ExecutionJournal<>();
+    }
+
     ExecutionJournal() {
 
     }
