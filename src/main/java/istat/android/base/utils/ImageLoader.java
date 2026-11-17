@@ -418,50 +418,74 @@ public class ImageLoader {
             b = applyExifOrientationIfNeeded(cachedFile.getAbsolutePath(), b);
             if (b != null)
                 return b;
+            if (!cachedFile.delete()) {
+                Log.w(TAG, "Unable to remove invalid image cache entry: " + cachedFile);
+            }
         }
         // Download image file create web
+        File temporaryFile = null;
         try {
-            Bitmap bitmap;
             InputStream is = resourceConnectionHandler.onConnect(url);
             if (is == null) {
                 Log.e(TAG, "Null inputStream found for url=" + url);
                 return null;
             }
-            if (cachedFile != null) {
-                OutputStream os = new FileOutputStream(cachedFile);
-                ToolKits.Stream.copyStream(is, os);
-                os.close();
-                resourceConnectionHandler.onDisconnect(url, is);
-                if (quality <= QUALITY_HIGH) {
-                    bitmap = getBitmapFromPath(cachedFile.getAbsolutePath());
+            byte[] bytes = null;
+            try {
+                if (cachedFile != null) {
+                    temporaryFile = File.createTempFile("img-" + cachedFile.getName(), ".tmp", cachedFile.getParentFile());
+                    try (OutputStream os = new FileOutputStream(temporaryFile)) {
+                        ToolKits.Stream.copyStream(is, os);
+                    }
                 } else {
-                    bitmap = decodeFile(cachedFile, quality);
+                    try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+                        ToolKits.Stream.copyStream(is, os);
+                        bytes = os.toByteArray();
+                    }
                 }
-                bitmap = applyExifOrientationIfNeeded(cachedFile.getAbsolutePath(), bitmap);
+            } finally {
+                try {
+                    resourceConnectionHandler.onDisconnect(url, is);
+                } finally {
+                    is.close();
+                }
+            }
+            Bitmap bitmap;
+            if (cachedFile != null) {
+                if (quality <= QUALITY_HIGH) {
+                    bitmap = getBitmapFromPath(temporaryFile.getAbsolutePath());
+                } else {
+                    bitmap = decodeFile(temporaryFile, quality);
+                }
+                bitmap = applyExifOrientationIfNeeded(temporaryFile.getAbsolutePath(), bitmap);
+                if (bitmap == null) {
+                    return null;
+                }
+                if (!temporaryFile.renameTo(cachedFile)) {
+                    throw new IOException("Unable to commit image cache entry: " + cachedFile);
+                }
             } else {
-                ByteArrayOutputStream os = new ByteArrayOutputStream();
-                ToolKits.Stream.copyStream(is, os);
-                byte[] bytes = os.toByteArray();
-                resourceConnectionHandler.onDisconnect(url, is);
                 if (quality <= QUALITY_HIGH) {
                     bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                 } else {
                     bitmap = decodeByte(bytes, quality);
                 }
                 bitmap = applyExifOrientationIfNeeded(bytes, bitmap);
-                os.close();
             }
-            if (memoryCache != null) {
+            if (memoryCache != null && bitmap != null) {
                 memoryCache.put(url, bitmap);
             }
             return bitmap;
         } catch (OutOfMemoryError ex) {
-            Log.e(TAG, "error getting bitmap at: " + url);
-            ex.printStackTrace();
+            Log.e(TAG, "Out of memory loading image: " + url, ex);
             if (memoryCache != null) {
                 memoryCache.clear();
             }
             return null;
+        } finally {
+            if (temporaryFile != null && temporaryFile.exists() && !temporaryFile.delete()) {
+                Log.w(TAG, "Unable to remove temporary image cache entry: " + temporaryFile);
+            }
         }
     }
 
@@ -809,6 +833,7 @@ public class ImageLoader {
     }
 
     private void notifyImageLoadError(PhotoToLoad photoToLoad, LoadCallback listener, Throwable th) {
+        Log.e(TAG, "Unable to load image: " + (photoToLoad != null ? photoToLoad.url : "null"), th);
         if ((listener == null || (listener != null && !listener.onLoadError(photoToLoad, th))) && (photoToLoad.imageView != null && errorBitmapHolder != null)) {
             photoToLoad.imageView.setImageBitmap(errorBitmapHolder);
         }
